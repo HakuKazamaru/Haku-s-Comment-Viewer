@@ -1,0 +1,47 @@
+﻿.comment-area {
+    width: 100%;
+    height: 100%;
+    margin: 0px 0px;
+    line-height: 5vh;
+    overflow: hidden;
+    background: none;
+    position: relative;
+}
+
+.comment-animation {
+    animation-name: animetxt;
+    animation-duration: 12.5s;
+    animation-iteration-count: 1;
+    animation-fill-mode: both;
+    animation-timing-function: linear;
+    transform: translateX(100%);
+}
+
+.comment {
+    position: absolute;
+    top: 0vh;
+    left: 100vw;
+    -webkit-text-stroke: 2px black;
+    text-stroke: 2px black;
+    color: white;
+    font-size: 4vh;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+@keyframes animetxt {
+    0% {
+        opacity: 1;
+        transform: translateX(100%);
+    }
+
+    99% {
+        opacity: 1;
+        transform: translateX(-100%);
+    }
+
+    100% {
+        opacity: 0;
+        display: none;
+    }
+}

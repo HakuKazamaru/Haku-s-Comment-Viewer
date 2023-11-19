@@ -1,0 +1,61 @@
+﻿@page "/userlist"
+@inject ILogger<UserList> Logger
+
+@inject HttpClient Http
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ユーザー一覧</PageTitle>
+
+<h6>ユーザー一覧</h6>
+<hr />
+
+<RadzenDataGrid AllowFiltering="true"
+                AllowColumnResize="true"
+                AllowAlternatingRows="false"
+                FilterMode="FilterMode.Advanced"
+                AllowSorting="true"
+                PageSize="50"
+                AllowPaging="true"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true"
+                Data="@userInfoList"
+                TItem="UserInfo"
+                ColumnWidth="400px"
+                LogicalFilterOperator="LogicalFilterOperator.Or"
+                IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                Style="heigth:95%">
+    <Columns>
+        <RadzenDataGridColumn TItem="UserInfo" Property="StreamSiteId" Title="配信サイトID" Width="100px" />
+        <RadzenDataGridColumn TItem="UserInfo" Property="UserId" Title="ユーザーID" Width="100px" />
+        <RadzenDataGridColumn TItem="UserInfo" Property="UserName" Title="ユーザー名" Width="160px" />
+        <RadzenDataGridColumn TItem="UserInfo" Property="IconPath" Title="アイコンURL" Width="200px" />
+        <RadzenDataGridColumn TItem="UserInfo" Property="Note" Title="備考" Width="400px" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    bool isLoading = false;
+    private UserInfo[]? userInfoList;
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// ページ読み込み時処理
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        await ShowLoading();
+        userInfoList = await Http.GetFromJsonAsync<UserInfo[]>("UserInfo");
+    }
+}

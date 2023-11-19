@@ -5,7 +5,25 @@ VisualStudioVersion = 17.3.32929.385
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YT_Test", "YT_Test\YT_Test.csproj", "{0A70053B-FE25-4ED8-A756-EA452A2BF84A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NC_Test", "NC_Test\NC_Test.csproj", "{AE4EC3AB-A1C4-47C8-8DE6-BB0A106C3D25}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NC_Test", "NC_Test\NC_Test.csproj", "{AE4EC3AB-A1C4-47C8-8DE6-BB0A106C3D25}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.WinForm", "HakuCommentViewer.WinForm\HakuCommentViewer.WinForm.csproj", "{03B10CA4-60CE-49D3-8000-E2AC3247E96E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.Common", "HakuCommentViewer.Common\HakuCommentViewer.Common.csproj", "{B8533BE4-6F59-44E8-91A9-418C53497792}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.Plugin.Comment.YouTube", "HakuCommentViewer.Plugin.Comment.YouTube\HakuCommentViewer.Plugin.Comment.YouTube.csproj", "{7D426353-762A-4F74-A071-E3815A398CB8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.Plugin.Comment.NicoNico", "HakuCommentViewer.Plugin.Comment.NicoNico\HakuCommentViewer.Plugin.Comment.NicoNico.csproj", "{897030D1-29F6-4B10-BC1E-9F801A2C68EE}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.WebServer", "HakuCommentViewer.WebServer\HakuCommentViewer.WebServer.csproj", "{F711BB4A-E800-4AAF-BDD3-A9EC035D7C1F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.WebClient", "HakuCommentViewer.WebClient\HakuCommentViewer.WebClient.csproj", "{57DD8C0D-24A7-48CC-8E0A-EBA067317BFA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.Common.Models", "HakuCommentViewer.Common.Models\HakuCommentViewer.Common.Models.csproj", "{B49DB388-D973-49B7-8B28-1B8F694FE99F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer.Plugin", "HakuCommentViewer.Plugin\HakuCommentViewer.Plugin.csproj", "{18F2E5AA-30BB-4C3A-A784-98EF15241B4B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HakuCommentViewer", "HakuCommentViewer\HakuCommentViewer.csproj", "{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +39,44 @@ Global
 		{AE4EC3AB-A1C4-47C8-8DE6-BB0A106C3D25}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AE4EC3AB-A1C4-47C8-8DE6-BB0A106C3D25}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AE4EC3AB-A1C4-47C8-8DE6-BB0A106C3D25}.Release|Any CPU.Build.0 = Release|Any CPU
+		{03B10CA4-60CE-49D3-8000-E2AC3247E96E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{03B10CA4-60CE-49D3-8000-E2AC3247E96E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{03B10CA4-60CE-49D3-8000-E2AC3247E96E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{03B10CA4-60CE-49D3-8000-E2AC3247E96E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8533BE4-6F59-44E8-91A9-418C53497792}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8533BE4-6F59-44E8-91A9-418C53497792}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8533BE4-6F59-44E8-91A9-418C53497792}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8533BE4-6F59-44E8-91A9-418C53497792}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7D426353-762A-4F74-A071-E3815A398CB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7D426353-762A-4F74-A071-E3815A398CB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7D426353-762A-4F74-A071-E3815A398CB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7D426353-762A-4F74-A071-E3815A398CB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{897030D1-29F6-4B10-BC1E-9F801A2C68EE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{897030D1-29F6-4B10-BC1E-9F801A2C68EE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{897030D1-29F6-4B10-BC1E-9F801A2C68EE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{897030D1-29F6-4B10-BC1E-9F801A2C68EE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F711BB4A-E800-4AAF-BDD3-A9EC035D7C1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F711BB4A-E800-4AAF-BDD3-A9EC035D7C1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F711BB4A-E800-4AAF-BDD3-A9EC035D7C1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F711BB4A-E800-4AAF-BDD3-A9EC035D7C1F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57DD8C0D-24A7-48CC-8E0A-EBA067317BFA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57DD8C0D-24A7-48CC-8E0A-EBA067317BFA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57DD8C0D-24A7-48CC-8E0A-EBA067317BFA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57DD8C0D-24A7-48CC-8E0A-EBA067317BFA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B49DB388-D973-49B7-8B28-1B8F694FE99F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B49DB388-D973-49B7-8B28-1B8F694FE99F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B49DB388-D973-49B7-8B28-1B8F694FE99F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B49DB388-D973-49B7-8B28-1B8F694FE99F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{18F2E5AA-30BB-4C3A-A784-98EF15241B4B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18F2E5AA-30BB-4C3A-A784-98EF15241B4B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18F2E5AA-30BB-4C3A-A784-98EF15241B4B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18F2E5AA-30BB-4C3A-A784-98EF15241B4B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{23D38598-D0AF-430D-BEB2-AAE2FD1E855C}.Release|Any CPU.Deploy.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

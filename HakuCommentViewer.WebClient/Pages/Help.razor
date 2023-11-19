@@ -1,0 +1,192 @@
+﻿@page "/help"
+@inject ILogger<Help> Logger
+@inject HttpClient Http
+
+@inject NotificationService NotificationService
+@inject Container container
+
+<PageTitle>コメントビュワー</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H3">使い方</RadzenText>
+<hr />
+
+<RadzenTabs Change=@OnChange @bind-SelectedIndex=@selectedIndex RenderMode="TabRenderMode.Client">
+    <Tabs>
+        <RadzenTabsItem Text="概要">
+            <RadzenCard Style="width:100%;">
+                <RadzenText TextStyle="TextStyle.H4">概要</RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">おことわり</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    本ソフトウェアーはα版（開発版）のため、未実装の機能、不具合が含まれています。
+                </RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">本ソフトウェアについて</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    同人サークル「風流吉報」に所属するVTuber「風丸　白」が開発するストリームサイト（YouTube Live、ニコニコ生放送など）向けのコメント、チャットを閲覧するためのソフトウェアです。
+                    現在は下記サイトに対応しています。
+                    <ul>
+                        <li>YouTube Live</li>
+                        <li>ニコニコ生放送e</li>
+                    </ul>
+                </RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">機能について</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    現在下記の機能が実装済みです。
+                    <ul>
+                        <li>配信枠管理(ホーム)</li>
+                        <li>コメントビュワー</li>
+                        <li>コメントジェネレーター</li>
+                        <li>Webサーバー</li>
+                    </ul>
+                </RadzenText>
+            </RadzenCard>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="コメントビュワー">
+            <RadzenCard Style="width:100%;">
+                <RadzenText TextStyle="TextStyle.H4">コメントビュワー</RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">概要</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    ストリームサイトのコメント、チャットが閲覧できます。
+                    下記の表示方法が利用可能です。
+                    <ul>
+                        <li>吹き出し形式</li>
+                        <li>表形式</li>
+                        <li>ニコニコ生放送形式</li>
+                    </ul>
+                </RadzenText>
+            </RadzenCard>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="コメントジェネレーター">
+            <RadzenCard Style="width:100%;">
+                <RadzenText TextStyle="TextStyle.H4">コメントジェネレーター</RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">概要</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    OSBなどの配信ソフト上にコメントを表示するための機能です。
+                    配信ソフトのWebブラウザソース機能を使用します。
+                </RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">使用方法</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    ①下記のアドレスをOSBなどの配信ソフトのWebブラウザソースに指定してください。
+                    <ul>
+                        <li>吹き出し形式：http://localhost:500/commentview</li>
+                        <li>表形式：http://localhost:500/commenttableview</li>
+                        <li>ニコニコ生放送形式：http://localhost:500/commentnicoliveview</li>
+                    </ul>
+                    ②カスタムCSSに下記の内容を指定してください。
+                    <RadzenText TextStyle="TextStyle.H6">カスタムCSS：</RadzenText>
+                    <p>
+                        body {<br>
+                        background-color: rgba(0, 0, 0, 0) !important;<br>
+                        margin: 0px auto !important;<br>
+                        overflow: hidden !important;<br>
+                        }<br>
+                        .rz-layout {background-color: rgba(0, 0, 0, 0) !important; }<br>
+                        .rz-header {display: none !important;}<br>
+                        .rz-footer {display: none !important;}<br>
+                        .rz-sidebar {display: none !important;}<br>
+                    </p>
+                </RadzenText>
+            </RadzenCard>
+        </RadzenTabsItem>
+
+        <RadzenTabsItem Text="Webサーバー">
+            <RadzenCard Style="width:100%;">
+                <RadzenText TextStyle="TextStyle.H4">Webサーバー</RadzenText>
+                <hr />
+                <RadzenText TextStyle="TextStyle.H5">概要</RadzenText>
+                <RadzenText TextStyle="TextStyle.Body1">
+                    iPhone、Androidスマートフォン、iPad、Androidタブレット、PCなど、他の端末でコメントを閲覧できる機能です。<br>
+                    Webブラウザで下記のいずれかのアドレスにアクセスしてください。
+                    <RadzenText TextStyle="TextStyle.H6">URL:</RadzenText>
+                    @if (urlList.Count < 1)
+                    {
+                        @message
+                    }
+                    else
+                    {
+                        <ul>
+                            @foreach (var item in urlList)
+                            {
+                                <li>@item</li>
+                            }
+                        </ul>
+                    }
+                </RadzenText>
+                ※ファイヤーウォールに本ソフトウェアーが行う通信の許可を設定する必要があります。
+            </RadzenCard>
+        </RadzenTabsItem>
+    </Tabs>
+
+</RadzenTabs>
+
+@code {
+    private int selectedIndex = 0;
+
+    private List<string> urlList = new List<string>();
+    private string url = "http://{0}:5000";
+    private string message = "Webサーバー機能が利用できません。";
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+
+        try
+        {
+            var ips = await Http.GetFromJsonAsync<string[]>("Util");
+            foreach (var ip in ips)
+            {
+                string addr_str = ip;
+                urlList.Add(string.Format(url, addr_str));
+            }
+        }
+        catch (Exception e)
+        {
+            string message = $"エラーが発生しました。<br>エラー:{e.Message}";
+            ShowErrorMessage(message);
+        }
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "エラー",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// タブ切り替え時
+    /// </summary>
+    /// <param name="index"></param>
+    private void OnChange(int index)
+    {
+
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public async void Dispose()
+    {
+        container.OnChange -= this.StateHasChanged;
+    }
+}

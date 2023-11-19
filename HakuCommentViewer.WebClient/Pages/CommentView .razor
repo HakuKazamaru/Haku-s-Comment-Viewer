@@ -1,0 +1,201 @@
+﻿@page "/commentview"
+@inject ILogger<CommentList> Logger
+@implements IDisposable
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Plugin.Models
+@using HakuCommentViewer.Common.Models
+@inject Container container
+
+<PageTitle>ｺﾒﾋﾞｭ(吹き出し形式)</PageTitle>
+
+<div id="scrollbox">
+    @foreach (var item in commentInfos)
+    {
+        <div class="received">
+            <div class="user">
+                [@item.TimeStampUSec]@item.UserName
+            </div>
+            <div class="msg">@item.CommentText</div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<GetNewCommentArgs> commentInfos = new List<GetNewCommentArgs>();
+    private string hubUrl;
+    private HubConnection hubConnection;
+
+    /// <summary>
+    /// 画面読み込み時の処理
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+
+        try
+        {
+            commentInfos.Clear();
+
+            string baseUrl = navigationManager.BaseUri;
+            hubUrl = baseUrl.TrimEnd('/') + "/commenthub";
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .Build();
+
+            hubConnection.On<string, string, int, string, string, string>("ReceiveMessage", ReceiveMessage);
+
+            // 自動再接続処理
+            hubConnection.Closed += async (exception) =>
+            {
+                if (exception is not null)
+                {
+                    ShowWarnMessage("内部サーバーとの接続が切断されました。再接続中...");
+
+                    for (int i = 0; i < this.container.RetryCount; i++)
+                    {
+                        try
+                        {
+                            await hubConnection.StartAsync();
+                            ShowInfoMessage($"[{i}]内部サーバーに再接続しました。");
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            string message = $"[{i}] 内部サーバーへの再接続に失敗しました。<br>エラー: {e.Message}";
+                            ShowErrorMessage(message);
+                        }
+                        await Task.Delay(1000);
+                    }
+                }
+                else
+                {
+                    ShowInfoMessage("内部サーバーとの接続を切断しました。");
+                }
+            };
+
+            await hubConnection.StartAsync();
+        }
+        catch (Exception e)
+        {
+            string message = $"内部サーバーへの接続に失敗しました。<br>エラー:{e.Message}";
+            ShowErrorMessage(message);
+        }
+    }
+
+    /// <summary>
+    /// WebSocketコメント受信時の処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task ReceiveMessage(string timeStampUSec, string commentId, int streamNo, string userId, string userName, string commentText)
+    {
+        string tmpString;
+        string message = "コメントを受信しました　配信管理番号:{0}　ユーザー名:{1}　コメント:{2}";
+        GetNewCommentArgs commentInfo = new GetNewCommentArgs();
+
+        Logger.LogDebug("========== Func Start! ==================================================");
+        Logger.LogDebug("タイムスタンプ:" + timeStampUSec);
+        Logger.LogDebug("コメントID    :" + commentId);
+        Logger.LogDebug("配信管理No    :" + streamNo);
+        Logger.LogDebug("ユーザーID    :" + userId);
+        Logger.LogDebug("ユーザー名    :" + userName);
+        Logger.LogDebug("コメント      :" + commentText);
+
+        commentInfo.StreamNo = streamNo;
+        tmpString = Common.UnixTimeToDateTimeString(timeStampUSec);
+        commentInfo.TimeStampUSec = string.IsNullOrWhiteSpace(tmpString) ? timeStampUSec : tmpString;
+        commentInfo.CommentId = commentId;
+        commentInfo.UserId = userId;
+        commentInfo.UserName = userName;
+        commentInfo.CommentText = commentText;
+
+        commentInfos.Insert(0, commentInfo);
+
+        while (commentInfos.Count > 25)
+        {
+            commentInfos.RemoveAt(commentInfos.Count - 1);
+        }
+
+        await InvokeAsync(StateHasChanged);
+
+        message = string.Format(message, streamNo, userName, commentText);
+        this.container.FooterText = message.Replace("<br>", "　");
+
+        Logger.LogDebug("========== Func End! ==================================================");
+    }
+
+    /// <summary>
+    /// 通知メッセージ表示処理
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowInfoMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "情報",
+                Detail = message,
+                Duration = 4000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// 警告メッセージ表示
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowWarnMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "警告",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "エラー",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// WebSocket切断処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task DisconnectAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        }
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public async void Dispose()
+    {
+        await DisconnectAsync();
+        container.OnChange -= this.StateHasChanged;
+    }
+}

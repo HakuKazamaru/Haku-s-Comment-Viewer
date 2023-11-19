@@ -1,0 +1,282 @@
+﻿@inject ILogger<Comment> Logger
+@implements IDisposable
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Plugin.Models
+@inject Container container
+
+<h6>・コメント</h6>
+<hr />
+<div class="rz-data-grid rz-has-paginator rz-datatable  rz-datatable-scrollable" style="height: 55vh;">
+    <div class="rz-data-grid-data">
+        <table class="rz-grid-table rz-grid-table-fixed" style="width:100%">
+            <colgroup>
+                <col style="width:10%;z-index:1">
+                <col style="width:80%">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th rowspan="1" colspan="1" class="rz-unselectable-text rz-frozen-cell rz-frozen-cell-left rz-frozen-cell-left-end  rz-text-align-right" scope="col" style="width:10%;text-align:right;left:0;z-index:2;">
+                        <div tabindex="-1">
+                            <span class="rz-column-title" title="#">
+                                <span class="rz-column-title-content">#</span>
+                            </span>
+                            <div style="cursor:col-resize;float:right;" class="rz-column-resizer">&nbsp;</div>
+                        </div>
+                    </th>
+                    <th rowspan="1" colspan="1" class="rz-unselectable-text rz-text-align-left" scope="col" style="width:90%;z-index:1">
+                        <div tabindex="-1">
+                            <span class="rz-column-title" title="コメント">
+                                <span class="rz-column-title-content">コメント</span>
+                            </span>
+                            <div style="cursor:col-resize;float:right;" class="rz-column-resizer">&nbsp;</div>
+                        </div>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (commentInfoList.Count < 1)
+                {
+                    <tr class=" rz-datatable-emptymessage-row">
+                        <td class="rz-datatable-emptymessage" colspan="3">
+                            <span style="white-space: normal">コメントはありません。</span>
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var commentInfo in commentInfoList)
+                    {
+                        <tr class="rz-data-row rz-datatable-edit ">
+                            <td rowspan="1" colspan="1" style="width:10%;text-align:right;;left:0;z-index:1" class=" rz-frozen-cell rz-frozen-cell-left rz-frozen-cell-left-end ">
+                                <span class="rz-cell-data" title="@commentInfo.StreamNo">
+                                    @commentInfo.StreamNo
+                                </span>
+                            </td>
+                            <td rowspan="1" colspan="1" style="width:90%">
+                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0px">
+                                    <div class="rz-p-3 rz-text-align-center">
+                                        <RadzenGravatar></RadzenGravatar>
+                                    </div>
+                                    <RadzenStack Orientation="Orientation.Vertical" Gap="0px" Style="width:100%">
+                                        <div>
+                                            <span class="rz-cell-data" title="@commentInfo.UserName">
+                                                <strong>@commentInfo.UserName</strong>
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span class="rz-cell-data" title="@commentInfo.CommentText">
+                                                @commentInfo.CommentText
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                                                <span class="rz-cell-data rz-text-overline" title="@commentInfo.TimeStampUSec">
+                                                    @commentInfo.TimeStampUSec
+                                                </span>
+                                            </RadzenStack>
+                                        </div>
+                                    </RadzenStack>
+                                </RadzenStack>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private bool isLoading = false;
+    private string hubUrl;
+
+    private List<GetNewCommentArgs> commentInfoList = new List<GetNewCommentArgs>();
+    private HubConnection hubConnection;
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    protected async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+
+        await ShowLoading();
+
+        try
+        {
+            commentInfoList.Clear();
+
+            string baseUrl = navigationManager.BaseUri;
+            hubUrl = baseUrl.TrimEnd('/') + "/commenthub";
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .Build();
+
+            hubConnection.On<string, string, int, string, string, string>("ReceiveMessage", ReceiveMessage);
+
+            // 自動再接続処理
+            hubConnection.Closed += async (exception) =>
+            {
+                if (exception is not null)
+                {
+                    ShowWarnMessage("内部サーバーとの接続が切断されました。再接続中...");
+
+                    for (int i = 0; i < this.container.RetryCount; i++)
+                    {
+                        try
+                        {
+                            await hubConnection.StartAsync();
+                            ShowInfoMessage($"[{i}]内部サーバーに再接続しました。");
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            string message = $"[{i}] 内部サーバーへの再接続に失敗しました。<br>エラー: {e.Message}";
+                            ShowErrorMessage(message);
+                        }
+                        await Task.Delay(1000);
+                    }
+                }
+                else
+                {
+                    ShowInfoMessage("内部サーバーとの接続を切断しました。");
+                }
+            };
+
+            await hubConnection.StartAsync();
+        }
+        catch (Exception e)
+        {
+            string message = $"内部サーバーへの接続に失敗しました。<br>エラー:{e.Message}";
+            ShowErrorMessage(message);
+        }
+    }
+
+    /// <summary>
+    /// 通知メッセージ表示処理
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowInfoMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "情報",
+                Detail = message,
+                Duration = 4000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// 警告メッセージ表示
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowWarnMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "警告",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "エラー",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// WebSocketコメント受信時の処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task ReceiveMessage(string timeStampUSec, string commentId, int streamNo, string userId, string userName, string commentText)
+    {
+        string tmpString;
+        string message = "コメントを受信しました　配信管理番号:{0}　ユーザー名:{1}　コメント:{2}";
+        GetNewCommentArgs commentInfo = new GetNewCommentArgs();
+
+        Logger.LogDebug("========== Func Start! ==================================================");
+        Logger.LogDebug("タイムスタンプ:" + timeStampUSec);
+        Logger.LogDebug("コメントID    :" + commentId);
+        Logger.LogDebug("配信管理No    :" + streamNo);
+        Logger.LogDebug("ユーザーID    :" + userId);
+        Logger.LogDebug("ユーザー名    :" + userName);
+        Logger.LogDebug("コメント      :" + commentText);
+
+        commentInfo.StreamNo = streamNo;
+        tmpString = Common.UnixTimeToDateTimeString(timeStampUSec);
+        commentInfo.TimeStampUSec = string.IsNullOrWhiteSpace(tmpString) ? timeStampUSec : tmpString;
+        commentInfo.CommentId = commentId;
+        commentInfo.UserId = userId;
+        commentInfo.UserName = userName;
+        commentInfo.CommentText = commentText;
+
+        commentInfoList.Insert(0, commentInfo);
+
+        while (commentInfoList.Count > 256)
+        {
+            commentInfoList.RemoveAt(commentInfoList.Count - 1);
+        }
+
+        message = string.Format(message, streamNo, userName, commentText);
+        this.container.FooterText = message.Replace("<br>", "　");
+
+        await InvokeAsync(StateHasChanged);
+
+        Logger.LogDebug("========== Func End! ==================================================");
+    }
+
+    /// <summary>
+    /// WebSocket切断処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task DisconnectAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        }
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public async void Dispose()
+    {
+        await DisconnectAsync();
+        container.OnChange -= this.StateHasChanged;
+    }
+}

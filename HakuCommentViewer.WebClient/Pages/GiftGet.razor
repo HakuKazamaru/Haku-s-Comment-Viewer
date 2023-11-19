@@ -1,0 +1,115 @@
+﻿@page "/giftget"
+@inject ILogger<GiftGet> Logger
+
+@inject HttpClient Http
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ギフトコメント指定取得</PageTitle>
+
+<h6>ギフトコメント指定取得</h6>
+<hr />
+
+<div>
+    <table>
+        <tbody>
+            <tr>
+                <th>配信情報ID</th>
+                <td><input type="text" @bind="@giftInfo!.StreamInfoId" /></td>
+            </tr>
+            <tr>
+                <th>タイムスタンプ(UtcSec)</th>
+                <td><input type="text" @bind="@giftInfo!.TimeStampUSec" /></td>
+            </tr>
+            <tr>
+                <th>コメントID</th>
+                <td><input type="text" @bind="@giftInfo!.CommentId" /></td>
+            </tr>
+        </tbody>
+    </table>
+    <button @onclick="OnClickAsync">検索</button>
+</div>
+
+
+@if (search)
+{
+    <hr />
+    <table>
+        <tbody>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.StreamInfoId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">タイムスタンプ(UtcSec)</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.TimeStampUSec</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメントID</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.CommentId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信サイトID</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.StreamSiteId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信管理ID</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.StreamManagementId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザーID</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.UserId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザー名</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.UserName</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">種別</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.GiftType</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">金額/個数</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.GiftValue</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント</RadzenText></th>
+                <td><RadzenText class="w-100" />@giftInfo.CommentText</td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+}
+
+@code {
+    private bool search = false;
+    private GiftInfo? giftInfo = new();
+
+    /// <summary>
+    /// 検索ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task OnClickAsync()
+    {
+        try
+        {
+            string tmoString = "";
+            giftInfo = await Http.GetFromJsonAsync<GiftInfo>(
+                string.Format("GiftInfo/Get?streamInfoId={0}&timeStampUSec={1}&commentId={2}",
+                giftInfo.StreamInfoId, giftInfo.TimeStampUSec, giftInfo.CommentId));
+            tmoString = Common.UnixTimeToDateTimeString(giftInfo.TimeStampUSec);
+            if (!string.IsNullOrWhiteSpace(tmoString)) { giftInfo.TimeStampUSec = tmoString; }
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = "検索を実行しました。", Duration = 4000 });
+            search = true;
+        }
+        catch (Exception e)
+        {
+            string message = $"エラー: 内部サーバーへの接続に失敗しました。: {e.Message}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "エラー", Detail = message, Duration = 4000 });
+            search = false;
+        }
+    }
+}

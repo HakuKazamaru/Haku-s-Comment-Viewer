@@ -1,0 +1,24 @@
+﻿.rz-grid-table {
+    width: unset;
+}
+
+.stream-no {
+    min-width: 2.5em;
+    max-width: 2.5em;
+}
+
+.stream-url {
+    min-width: 320px;
+}
+
+.toggle-switch {
+    min-width: 5em
+}
+
+.note {
+    min-width: 320px
+}
+
+.input-panel {
+    min-width: 8.75em
+}

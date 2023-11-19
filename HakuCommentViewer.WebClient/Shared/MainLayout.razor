@@ -1,0 +1,118 @@
+@inject ILogger<MainLayout> Logger
+@inherits LayoutComponentBase
+@implements IDisposable
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@inject Container container
+
+<RadzenLayout>
+    <RadzenHeader>
+        <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0">
+            <RadzenSidebarToggle Click="@(() => sidebarExpanded = !sidebarExpanded)" />
+            <RadzenLabel Text="コメントビュワー" />
+            <MenuBar />
+        </RadzenStack>
+    </RadzenHeader>
+
+    <RadzenSidebar Responsive="false" @bind-Expanded="@sidebarExpanded">
+        <NavMenu />
+    </RadzenSidebar>
+
+    <RadzenBody>
+        <div class="rz-p-2" style="height:100%">
+            @Body
+        </div>
+    </RadzenBody>
+
+    <RadzenFooter>
+        @container.FooterText
+    </RadzenFooter>
+</RadzenLayout>
+<RadzenComponents />
+
+@code {
+    private bool sidebarExpanded = true;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+        this.container.FooterText = "メインレイアウトの初期化が完了しました。";
+    }
+
+    /// <summary>
+    /// 通知メッセージ表示処理
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowInfoMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "情報",
+                Detail = message,
+                Duration = 4000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// 警告メッセージ表示
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowWarnMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "警告",
+                Detail = message,
+                Duration = 4000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="funcName"></param>
+    /// <param name="streamNo"></param>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string funcName, string streamNo, string message)
+    {
+        string tmpMessage = "[" + streamNo + "]" + message;
+        if (funcName == "Start" || funcName == "Stop")
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "エラー",
+                    Detail = tmpMessage,
+                    Duration = 10000
+                });
+            this.container.FooterText = tmpMessage;
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "エラー",
+                    Detail = message,
+                    Duration = 10000
+                });
+            this.container.FooterText = message.Replace("<br>", "　");
+        }
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public void Dispose()
+    {
+        container.OnChange -= this.StateHasChanged;
+    }
+}

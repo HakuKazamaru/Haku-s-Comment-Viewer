@@ -1,0 +1,57 @@
+﻿@page "/about"
+@inject ILogger<About> Logger
+
+<PageTitle>About</PageTitle>
+
+<RadzenText TextStyle="TextStyle.H3">情報</RadzenText>
+<hr />
+
+<RadzenCard Style="width:100%;">
+    <RadzenText TextStyle="TextStyle.H5">・バージョン</RadzenText>
+    <RadzenText TextStyle="TextStyle.Body1">
+        α版（0.0.0.1）
+    </RadzenText>
+    <hr />
+    <RadzenText TextStyle="TextStyle.H5">関連リンク</RadzenText>
+    <RadzenText TextStyle="TextStyle.Body1">
+        <ul>
+            <li>
+                ホームページ(風流吉報):
+                <a href="https://www.haku-kazamaru.club/" target="_blank" rel="noopener noreferrer">https://www.haku-kazamaru.club/</a>
+            </li>
+            <li>
+                X(Twitter:個人):
+                <a href="https://twitter.com/HakuKazamaru" target="_blank" rel="noopener noreferrer">https://twitter.com/HakuKazamaru</a>
+            </li>
+            <li>
+                X(Twitter:同人サークル):
+                <a href="https://twitter.com/Huryukippo_Haku" target="_blank" rel="noopener noreferrer">https://twitter.com/Huryukippo_Haku</a>
+            </li>
+            <li>
+                YouTube:
+                <a href="https://www.youtube.com/@@HakuKazamaru" target="_blank" rel="noopener noreferrer">https://www.youtube.com/@@HakuKazamaru</a>
+            </li>
+            <li>
+                ニコニコ動画:
+                <a href="https://www.nicovideo.jp/user/6811614" target="_blank" rel="noopener noreferrer">https://www.nicovideo.jp/user/6811614</a>
+            </li>
+            <li>
+                Mastodon:
+                <a href="https://mstdn.haku-kazamaru.club/@@haku_kazamaru" target="_blank" rel="noopener noreferrer">https://mstdn.haku-kazamaru.club/@@haku_kazamaru</a>
+            </li>
+            <li>
+                misskey:
+                <a href="https://misskey.haku-kazamaru.club/@@haku_kazamaru" target="_blank" rel="noopener noreferrer">https://misskey.haku-kazamaru.club/@@haku_kazamaru</a>
+            </li>
+            <li>
+                GitHub:
+                <a href="https://github.com/HakuKazamaru/Haku-s-Comment-Viewer" target="_blank" rel="noopener noreferrer">https://github.com/HakuKazamaru/Haku-s-Comment-Viewer</a>
+            </li>
+        </ul>
+    </RadzenText>
+
+</RadzenCard>
+
+@code {
+
+}

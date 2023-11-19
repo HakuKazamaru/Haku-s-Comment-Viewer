@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AngleSharp.Js" Version="0.15.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.3.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HakuCommentViewer.Common.Models\HakuCommentViewer.Common.Models.csproj" />
+    <ProjectReference Include="..\HakuCommentViewer.Common\HakuCommentViewer.Common.csproj" />
+    <ProjectReference Include="..\HakuCommentViewer.Plugin\HakuCommentViewer.Plugin.csproj" />
+  </ItemGroup>
+
+</Project>

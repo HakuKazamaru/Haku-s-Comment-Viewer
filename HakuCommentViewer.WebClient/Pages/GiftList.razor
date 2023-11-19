@@ -1,0 +1,82 @@
+﻿@page "/giftlist"
+@inject ILogger<GiftList> Logger
+@inject HttpClient Http
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ギフトコメント一覧</PageTitle>
+
+<h6>ギフトコメント一覧</h6>
+<hr />
+
+<RadzenDataGrid AllowFiltering="true"
+                AllowColumnResize="true"
+                AllowAlternatingRows="false"
+                FilterMode="FilterMode.Advanced"
+                AllowSorting="true"
+                PageSize="50"
+                AllowPaging="true"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true"
+                Data="@gifttInfoList"
+                TItem="GiftInfo"
+                ColumnWidth="400px"
+                LogicalFilterOperator="LogicalFilterOperator.Or"
+                IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                Style="heigth:95%">
+    <Columns>
+        <RadzenDataGridColumn TItem="GiftInfo" Property="StreamInfoId" Title="配信情報ID" Width="100px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="TimeStampUSec" Title="タイムスタンプ" Width="180px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="CommentId" Title="コメントID" Width="100px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="StreamSiteId" Title="配信サイトID" Width="100px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="StreamManagementId" Title="配信管理ID" Width="100px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="UserId" Title="ユーザーID" Width="100px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="UserName" Title="ユーザー名" Width="160px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="GiftType" Title="ユーザーID" Width="100px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="GiftValue" Title="ユーザー名" Width="160px" />
+        <RadzenDataGridColumn TItem="GiftInfo" Property="CommentText" Title="コメント" Width="400px" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    bool isLoading = false;
+    private GiftInfo[]? gifttInfoList;
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    protected async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// ページ読み込み時処理
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        List<GiftInfo>? tmpGiftInfoList = new List<GiftInfo>();
+
+        await ShowLoading();
+        gifttInfoList = await Http.GetFromJsonAsync<GiftInfo[]>("GiftInfo");
+
+        foreach (var commentInfo in gifttInfoList)
+        {
+            string tmpString = Common.UnixTimeToDateTimeString(commentInfo.TimeStampUSec);
+            GiftInfo tmpGiftInfo = commentInfo;
+
+            if (!string.IsNullOrWhiteSpace(tmpString))
+            {
+                tmpGiftInfo.TimeStampUSec = tmpString;
+            }
+
+            tmpGiftInfoList.Add(tmpGiftInfo);
+        }
+
+        gifttInfoList = tmpGiftInfoList.ToArray();
+    }
+}

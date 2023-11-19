@@ -1,0 +1,105 @@
+﻿@page "/userpost"
+@inject ILogger<UserPost> Logger
+
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ユーザー登録</PageTitle>
+
+<h6>登録内容</h6>
+<hr />
+
+<table>
+    <tbody>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信サイトID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamSiteId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザーID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "UserId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザー名</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "UserName")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">アイコンURL</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "IconPath")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "Note")) class="w-100" /></td>
+        </tr>
+    </tbody>
+</table>
+<RadzenButton Click=@(args => Submit()) Text="登録" ButtonStyle="ButtonStyle.Primary" />
+
+@code {
+    private UserInfo? postdata;
+    private string value;
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        postdata ??= new();
+    }
+
+    /// <summary>
+    /// テキストボックス値変更時
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="name"></param>
+    private void OnTextChange(string value, string name)
+    {
+        switch (name)
+        {
+            case "StreamSiteId":
+                {
+                    postdata.StreamSiteId = value;
+                    break;
+                }
+            case "UserId":
+                {
+                    postdata.UserId = value;
+                    break;
+                }
+            case "UserName":
+                {
+                    postdata.UserName = value;
+                    break;
+                }
+            case "IconPath":
+                {
+                    postdata.IconPath = value;
+                    break;
+                }
+            case "Note":
+                {
+                    postdata.Note = value;
+                    break;
+                }
+            default:
+                {
+                    break;
+                }
+        }
+    }
+
+    /// <summary>
+    /// 登録ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task Submit()
+    {
+        await Http.PostAsJsonAsync<UserInfo>("UserInfo/Create", postdata);
+        string message = string.Format("[{0}]登録しました。", DateTime.Now.ToString());
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = message, Duration = 4000 });
+    }
+}

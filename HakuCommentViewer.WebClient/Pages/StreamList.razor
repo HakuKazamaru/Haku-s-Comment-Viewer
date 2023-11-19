@@ -1,0 +1,67 @@
+﻿@page "/streamlist"
+@inject ILogger<StreamList> Logger
+
+@inject HttpClient Http
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ユーザー一覧</PageTitle>
+
+<h6>ユーザー一覧</h6>
+<hr />
+
+<RadzenDataGrid AllowFiltering="true"
+                AllowColumnResize="true"
+                AllowAlternatingRows="false"
+                FilterMode="FilterMode.Advanced"
+                AllowSorting="true"
+                PageSize="50"
+                AllowPaging="true"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true"
+                Data="@streamInfoList"
+                TItem="StreamInfo"
+                ColumnWidth="400px"
+                LogicalFilterOperator="LogicalFilterOperator.Or"
+                IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                Style="heigth:95%">
+    <Columns>
+        <RadzenDataGridColumn TItem="StreamInfo" Property="StreamId" Title="配信ID" Width="100px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="StreamName" Title="配信名" Width="100px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="StreamPageId" Title="配信ID(配信サイト内ID)" Width="100px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="StreamUrl" Title="配信URL" Width="100px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="CommentRoomId" Title="コメント(チャット)ルームID" Width="100px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="StreamSiteId" Title="配信サイトID" Width="100px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="StartDateTime" Title="配信開始日時" Width="160px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="EndDateTime" Title="配信終了日時" Width="160px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="ViewerCount" Title="視聴者数" Width="60px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="CommentCount" Title="コメント数" Width="60px" />
+        <RadzenDataGridColumn TItem="StreamInfo" Property="Note" Title="備考" Width="400px" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    bool isLoading = false;
+    private StreamInfo[]? streamInfoList;
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// ページ読み込み時処理
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        await ShowLoading();
+        streamInfoList = await Http.GetFromJsonAsync<StreamInfo[]>("StreamInfo");
+    }
+}

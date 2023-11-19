@@ -1,0 +1,124 @@
+﻿@inject ILogger<GiftListDialog> Logger
+@implements IDisposable
+
+@inject HttpClient Http
+@inject NotificationService NotificationService
+@inject Radzen.DialogService dialogService
+
+@using HakuCommentViewer.Common.Models
+@inject Container container
+
+<RadzenStack Orientation="Orientation.Vertical" Gap="0px" Style="width:100%;height:100%;">
+    <RadzenDataGrid AllowFiltering="true"
+                    AllowColumnResize="true"
+                    AllowAlternatingRows="false"
+                    FilterMode="FilterMode.Advanced"
+                    AllowSorting="true"
+                    PageSize="50"
+                    AllowPaging="true"
+                    PagerHorizontalAlign="HorizontalAlign.Left"
+                    ShowPagingSummary="true"
+                    Data="@giftInfoList"
+                    TItem="GiftInfo"
+                    ColumnWidth="400px"
+                    LogicalFilterOperator="LogicalFilterOperator.Or"
+                    IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                    Style="heigth:95%">
+        <Columns>
+            <RadzenDataGridColumn TItem="GiftInfo" Property="TimeStampUSec" Title="タイムスタンプ" Width="7em" />
+            <RadzenDataGridColumn TItem="GiftInfo" Property="UserName" Title="ユーザー名" Width="160px" />
+            <RadzenDataGridColumn TItem="GiftInfo" Property="GiftType" Title="スパ茶/ギフト種別" Width="160px" />
+            <RadzenDataGridColumn TItem="GiftInfo" Property="GiftValue" Title="スパ茶/ギフト額" Width="6.5em" />
+            <RadzenDataGridColumn TItem="GiftInfo" Property="CommentText" Title="コメント" Width="320px" />
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenStack>
+
+@code {
+    [Parameter]
+    public string StreamSiteId { get; set; }
+    [Parameter]
+    public string StreamInfoId { get; set; }
+
+    bool isLoading = false;
+    private GiftInfo[]? giftInfoList;
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+
+        await ShowLoading();
+
+        try
+        {
+            GiftInfo[]? tmpGiftInfoList1 = await Http.GetFromJsonAsync<GiftInfo[]>(
+                $"GiftInfo/GetByStreamId?streamSiteId={StreamSiteId}&streamInfoId={StreamInfoId}");
+            List<GiftInfo> tmpGiftInfoList2 = new List<GiftInfo>();
+
+            foreach (var giftInfo in tmpGiftInfoList1)
+            {
+                GiftInfo tmpGiftInfo = new GiftInfo();
+                string tmpString = Common.UnixTimeToDateTimeString(giftInfo.TimeStampUSec);
+
+                tmpGiftInfo.StreamInfoId = giftInfo.StreamInfoId;
+                tmpGiftInfo.TimeStampUSec = string.IsNullOrWhiteSpace(tmpString) ? giftInfo.TimeStampUSec : tmpString;
+                tmpGiftInfo.CommentId = giftInfo.CommentId;
+                tmpGiftInfo.StreamSiteId = giftInfo.StreamSiteId;
+                tmpGiftInfo.StreamManagementId = giftInfo.StreamManagementId;
+                tmpGiftInfo.UserId = giftInfo.UserId;
+                tmpGiftInfo.UserName = giftInfo.UserName;
+                tmpGiftInfo.GiftType = giftInfo.GiftType;
+                tmpGiftInfo.GiftValue = giftInfo.GiftValue;
+                tmpGiftInfo.CommentText = giftInfo.CommentText;
+
+                tmpGiftInfoList2.Add(tmpGiftInfo);
+            }
+
+            this.giftInfoList = tmpGiftInfoList2.ToArray();
+        }
+        catch (Exception e)
+        {
+            ShowErrorMessage($"ユーザー情報の取得に失敗しました。<br>エラー:{e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "エラー",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public void Dispose()
+    {
+        container.OnChange -= this.StateHasChanged;
+    }
+}

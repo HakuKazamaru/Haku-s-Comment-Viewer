@@ -1,0 +1,24 @@
+﻿@page "/"
+@inject ILogger<Index> Logger
+
+<PageTitle>コメントビュワー</PageTitle>
+
+<RadzenSplitter Orientation="Orientation.Vertical" style="height: 100%; border: 1px solid rgba(0,0,0,.08);">
+    <RadzenSplitterPane Size="25%">
+        <StreamManagement />
+    </RadzenSplitterPane>
+    <RadzenSplitterPane Size="75%">
+        <RadzenSplitter Orientation="Orientation.Horizontal" style="height: 100%; border: 1px solid rgba(0,0,0,.08);">
+            <RadzenSplitterPane Size="50%">
+                <div class="rz-pt-2">
+                    <Comment />
+                </div>
+            </RadzenSplitterPane>
+            <RadzenSplitterPane Size="50%">
+                <div class="rz-pt-2">
+                    <Gift />
+                </div>
+            </RadzenSplitterPane>
+        </RadzenSplitter>
+    </RadzenSplitterPane>
+</RadzenSplitter>

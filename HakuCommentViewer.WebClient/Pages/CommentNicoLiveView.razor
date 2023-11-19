@@ -1,0 +1,235 @@
+﻿@page "/commentnicoliveview"
+@inject ILogger<CommentNicoLiveView> Logger
+@implements IDisposable
+@using System.Timers
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Plugin.Models
+@using HakuCommentViewer.Common.Models
+@inject Container container
+@inject IJSRuntime JSRuntime;
+
+<PageTitle>ｺﾒﾋﾞｭ(ニコ生風)</PageTitle>
+
+<div class="comment-area">
+</div>
+
+<script>
+    window.commentAdd = (commentText) => {
+        console.log("commentAdd:Tick");
+        var elements = document.getElementsByClassName("comment-area");
+        elements = Array.from(elements);
+        elements.forEach(function (element) {
+            var p = document.createElement('p')
+            var wy = window.innerHeight;
+            var y = Math.floor(Math.random() * 19) * 4;
+            p.textContent = commentText;
+            p.classList.add("comment");
+            p.classList.add("comment-move");
+            p.classList.add("comment-animation");
+            // アニメーション終了後に実行する内容
+            element.addEventListener('animationend', () => {
+                commentDelete();
+            })
+            element.addEventListener('webkitAnimationEnd', () => {
+                commentDelete();
+            })
+            p.style.top = y + 'vh';
+            element.appendChild(p);
+        });
+    }
+
+    window.commentDelete = () => {
+        console.log("commentDelete:Tick");
+        var elements = document.getElementsByClassName("comment-animation");
+        elements = Array.from(elements);
+        elements.forEach(function (element) {
+            if (document.defaultView.getComputedStyle(element, null).display === "none") {
+                element.remove();
+            }
+        });
+    }
+
+    window.commentMove = () => {
+        console.log("commentMove:Tick");
+        var elements = document.getElementsByClassName("comment-move");
+        elements = Array.from(elements);
+        elements.forEach(function (element) {
+            var wx = window.innerWidth;
+            element.style.left = (element.offsetLeft - (wx / 80)) + 'px';
+            console.log("commentMove:X:" + element.offsetLeft + "px");
+            if (element.offsetLeft < (wx * -0.5)) {
+                element.remove();
+            }
+        });
+    }
+</script>
+
+@code {
+    private string commentHtml = "";
+    private string hubUrl;
+
+    private HubConnection hubConnection;
+
+    /// <summary>
+    /// 画面読み込み時の処理
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+
+        try
+        {
+            string baseUrl = navigationManager.BaseUri;
+            hubUrl = baseUrl.TrimEnd('/') + "/commenthub";
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .Build();
+
+            hubConnection.On<string, string, int, string, string, string>("ReceiveMessage", ReceiveMessage);
+
+            // 自動再接続処理
+            hubConnection.Closed += async (exception) =>
+            {
+                if (exception is not null)
+                {
+                    ShowWarnMessage("内部サーバーとの接続が切断されました。再接続中...");
+
+                    for (int i = 0; i < this.container.RetryCount; i++)
+                    {
+                        try
+                        {
+                            await hubConnection.StartAsync();
+                            ShowInfoMessage($"[{i}]内部サーバーに再接続しました。");
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            string message = $"[{i}] 内部サーバーへの再接続に失敗しました。<br>エラー: {e.Message}";
+                            ShowErrorMessage(message);
+                        }
+                        await Task.Delay(1000);
+                    }
+                }
+                else
+                {
+                    ShowInfoMessage("内部サーバーとの接続を切断しました。");
+                }
+            };
+
+            await hubConnection.StartAsync();
+        }
+        catch (Exception e)
+        {
+            string message = $"内部サーバーへの接続に失敗しました。<br>エラー:{e.Message}";
+            ShowErrorMessage(message);
+        }
+    }
+
+    /// <summary>
+    /// 通知メッセージ表示処理
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowInfoMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "情報",
+                Detail = message,
+                Duration = 4000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// 警告メッセージ表示
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowWarnMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "警告",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "エラー",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// WebSocketコメント受信時の処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task ReceiveMessage(string timeStampUSec, string commentId, int streamNo, string userId, string userName, string commentText)
+    {
+        string tmpString;
+        string message = "コメントを受信しました　配信管理番号:{0}　ユーザー名:{1}　コメント:{2}";
+
+        Logger.LogDebug("========== Func Start! ==================================================");
+        Logger.LogDebug("タイムスタンプ:" + timeStampUSec);
+        Logger.LogDebug("コメントID    :" + commentId);
+        Logger.LogDebug("配信管理No    :" + streamNo);
+        Logger.LogDebug("ユーザーID    :" + userId);
+        Logger.LogDebug("ユーザー名    :" + userName);
+        Logger.LogDebug("コメント      :" + commentText);
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("commentAdd", commentText);
+        }
+        catch (Exception e)
+        {
+            Logger.LogError(e, e.Message);
+        }
+        message = string.Format(message, streamNo, userName, commentText);
+
+        this.container.FooterText = message.Replace("<br>", "　");
+
+        Logger.LogDebug("========== Func End! ==================================================");
+    }
+
+    /// <summary>
+    /// WebSocket切断処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task DisconnectAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        }
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public async void Dispose()
+    {
+        await DisconnectAsync();
+        container.OnChange -= this.StateHasChanged;
+    }
+}

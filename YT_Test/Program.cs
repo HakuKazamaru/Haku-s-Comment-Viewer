@@ -1,13 +1,17 @@
-﻿using AngleSharp.Html.Dom;
+﻿using System.IO;
+using System.Runtime.Serialization.Json;
+using System.Text;
+
+using AngleSharp.Html.Dom;
 using AngleSharp.Html.Parser;
 using Jint.Parser.Ast;
 using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json.Linq;
 using NLog.LayoutRenderers;
 using NLog.Web;
-using System.IO;
-using System.Runtime.Serialization.Json;
-using System.Text;
+
+using HakuCommentViewer.Plugin;
+using HakuCommentViewer.Plugin.Comment.YouTube;
 
 namespace YT_Test
 {
@@ -17,6 +21,11 @@ namespace YT_Test
         /// ロガー
         /// </summary>
         private static NLog.Logger logger;
+
+        /// <summary>
+        /// 並列処理停止フラグ
+        /// </summary>
+        private static bool cancelFlag = false;
 
         /// <summary>
         /// メインメソッド
@@ -34,29 +43,30 @@ namespace YT_Test
                 logger.Info("========== App Start! ==================================================");
 
                 // スクレイピング先URL
-                string url = "https://youtube.com/live/3c8Rlf9NJOk";
+                string url = "https://www.youtube.com/watch?v=79XaA_4CYj8";
 
-                using (var getIdTask = Task.Run(() => GetChatID(url)))
+                using (CancellationTokenSource cancellationTokenSource = new CancellationTokenSource())
                 {
-                    while (!getIdTask.IsCompleted)
+                    var commentFunc = new Comment(0, url);
+                    using (var task = Task.Run(() => commentFunc.StartAsync(cancellationTokenSource.Token)))
                     {
-                        Thread.Sleep(1000);
-                    }
-                    chatId = getIdTask.Result;
-
-                    if (!string.IsNullOrEmpty(chatId))
-                    {
-                        using (var getChatTask = Task.Run(() => GetChatData(chatId, "3c8Rlf9NJOk")))
+                        task.Wait();
+                        if (task.Result)
                         {
-                            while (!getChatTask.IsCompleted)
+                            logger.Info("終了するにはエスケープキーを押してください。");
+                            using (var checkKeyStatu = Task.Run(() => CheckEscapeKey()))
                             {
-                                Thread.Sleep(1000);
+                                while (!cancelFlag)
+                                {
+                                    Thread.Sleep(250);
+                                }
+                                cancellationTokenSource.Cancel();
+                                checkKeyStatu.Wait();
                             }
-
-                            if (getChatTask.Result > -1)
-                            {
-                                logger.Info("チャット情報が取得できました。");
-                            }
+                        }
+                        else
+                        {
+                            logger.Error("コメント取得に失敗しました。");
                         }
                     }
                 }
@@ -72,160 +82,26 @@ namespace YT_Test
         }
 
         /// <summary>
-        /// 指定された配信URLのチャットIDを取得する
+        /// エスケープキー監視処理（処理中断用）
         /// </summary>
-        /// <param name="url"></param>
-        private static async Task<string> GetChatID(string url)
+        /// <returns></returns>
+        private static async Task CheckEscapeKey()
         {
-            string returnVal = "";
             logger.Info("========== Func Start! ==================================================");
-
-            try
+            while (true)
             {
-                var responseData = default(IHtmlDocument);
+                ConsoleKeyInfo consoleKeyInfo = Console.ReadKey();
 
-                logger.Info("取得先URL：" + url);
-
-                // スクレイピング
-                using (var client = new HttpClient())
-                using (var stream = await client.GetStreamAsync(new Uri(url)))
+                if (consoleKeyInfo.Key == ConsoleKey.Escape)
                 {
-                    var parser = new HtmlParser();
-                    responseData = await parser.ParseDocumentAsync(stream);
+                    logger.Info("エスケープキーが押下されました。");
+                    cancelFlag = true;
+                    break;
                 }
 
-                logger.Info("ページタイトル：" + responseData.Title);
-
-                var scriptDocs = responseData.GetElementsByTagName("script");
-                foreach (var scriptDoc in scriptDocs)
-                {
-                    // logger.Trace("html：" + scriptDoc.InnerHtml);
-                    if (scriptDoc.InnerHtml.IndexOf("var ytInitialData") != -1)
-                    {
-                        logger.Info("検索対象発見");
-                        // logger.Trace("html:\r\n" + scriptDoc.InnerHtml);
-
-                        string jsonString = scriptDoc.InnerHtml.Replace("var ytInitialData = ", "").Replace("};", "}");
-                        // logger.Trace("json:\n" + jsonString);
-                        JObject jsonObject = JObject.Parse(jsonString);
-
-                        var contents = jsonObject["contents"];
-                        var twoColumnWatchNextResults = contents["twoColumnWatchNextResults"];
-                        var conversationBar = twoColumnWatchNextResults["conversationBar"];
-                        var liveChatRenderer = conversationBar["liveChatRenderer"];
-                        var continuations = liveChatRenderer["continuations"];
-                        var reloadContinuationData = continuations[0]["reloadContinuationData"];
-                        var continuation = reloadContinuationData["continuation"];
-
-                        string idString = continuation.ToString();
-
-                        if (idString is not null)
-                        {
-                            logger.Info("チャットID" + idString);
-
-                            returnVal = idString;
-                        }
-                    }
-                }
-
-                if (returnVal == "")
-                {
-                    logger.Error("チャットIDが取得できませんでした。");
-                }
+                Thread.Sleep(250);
             }
-            catch (Exception ex)
-            {
-                logger.Error("チャットIDの取得でエラーが発生しました。");
-                logger.Error(ex.Message);
-                logger.Debug(ex.StackTrace);
-                returnVal = "";
-            }
-
             logger.Info("========== Func End!　 ==================================================");
-            return returnVal;
-        }
-
-        private static async Task<int> GetChatData(string chatId, string liveId)
-        {
-            int returnVal = -1;
-            string apiUrl = "https://www.youtube.com/youtubei/v1/live_chat/get_live_chat";
-            logger.Info("========== Func Start! ==================================================");
-
-            try
-            {
-                string postJsonString =
-                    @"{" +
-                    @"""context"": {" +
-                    @"""client"": {" +
-                    @"""visitorData"": ""Cgsyc1p3Y3p2Z09mayjD6fOkBg%3D%3D""," +
-                    @"""userAgent"": ""Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.58,gzip(gfe)""," +
-                    @"""clientName"": ""WEB""," +
-                    @"""clientVersion"": ""2.20230628.01.00""," +
-                    @"""osName"": ""Windows""," +
-                    @"""osVersion"": ""10.0""," +
-                    @"""originalUrl"": ""https://www.youtube.com/live_chat?is_popout=1&v=" + liveId + @"""," +
-                    @"""screenPixelDensity"": 1," +
-                    @"""platform"": ""DESKTOP""," +
-                    @"""clientFormFactor"": ""UNKNOWN_FORM_FACTOR""," +
-                    @"""configInfo"": {" +
-                    @"""appInstallData"": ""CMPp86QGELiLrgUQ57qvBRD-7q4FEI-jrwUQ86ivBRCMt68FEOSz_hIQqcSvBRDqw68FEKHCrwUQ-r6vBRDn964FEOLUrgUQn7-vBRDDt_4SEP61rwUQs8mvBRCEtq8FEKLsrgUQpMuvBRCJ6K4FEOC2rwUQ7qKvBRDM364FENuvrwUQj8OvBRDdxq8FEMy3_hIQzK7-EhClma8FEKu3rwUQqrL-EhD4ta8FEKXC_hIQ1KGvBRDrk64FEL22rgUQ3ravBRC7tK8FEKvCrwUQn7mvBQ%3D%3D""" +
-                    @"}," +
-                    @"""screenDensityFloat"": 1.0," +
-                    @"""timeZone"": ""Asia/Tokyo""," +
-                    @"""browserName"": ""Edge Chromium""," +
-                    @"""browserVersion"": ""114.0.1823.58""," +
-                    @"""acceptHeader"": ""text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7""," +
-                    @"}," +
-                    @"""user"": {" +
-                    @"""lockedSafetyMode"": false" +
-                    @"}," +
-                    @"""request"": {" +
-                    @"""useSsl"": true ," +
-                    @"""internalExperimentFlags"": [] ," +
-                    @"""consistencyTokenJars"": [] " +
-                    @"}" +
-                    @"}," +
-                    @"""continuation"": """ + chatId + @""", " +
-                    @"""webClientInfo"": {" +
-                    @"""isDocumentHidden"": false " +
-                    @"}," +
-                    @"""isInvalidationTimeoutRequest"": true " +
-                    @"}";
-
-                logger.Debug("post data:\r\n" + postJsonString);
-
-                using (var client = new HttpClient())
-                {
-                    var content = new StringContent(postJsonString, Encoding.UTF8, "application/json");
-                    var response = await client.PostAsync(apiUrl, content);
-
-                    logger.Debug("status Code:" + response.StatusCode);
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        var responseContent = await response.Content.ReadAsStringAsync();
-                        JObject jsonObject = JObject.Parse(responseContent);
-
-                        returnVal = 0;
-                    }
-                    else
-                    {
-                        logger.Error("チャットデータの取得に失敗しました。");
-                        returnVal = -1;
-                    }
-                }
-
-            }
-            catch (Exception ex)
-            {
-                logger.Error("チャットデータの取得でエラーが発生しました。");
-                logger.Error(ex.Message);
-                logger.Debug(ex.StackTrace);
-                returnVal = -1;
-            }
-
-            logger.Info("========== Func End!　 ==================================================");
-            return returnVal;
         }
 
     }

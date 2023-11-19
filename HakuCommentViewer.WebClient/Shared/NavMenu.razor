@@ -1,0 +1,64 @@
+﻿@inject TooltipService tooltipService
+
+<RadzenPanelMenu>
+    <RadzenPanelMenuItem Text="ホーム" Icon="home" Path="" Match="NavLinkMatch.All" />
+    <RadzenPanelMenuItem Text="コメビュ" Icon="chat">
+        <RadzenPanelMenuItem Text="吹き出し形式" Icon="chat" Path="commentview" Match="NavLinkMatch.All" />
+        <RadzenPanelMenuItem Text="表形式" Icon="table_rows" Path="commenttableview" Match="NavLinkMatch.All" />
+        <RadzenPanelMenuItem Text="ニコ生形式" Icon="live_tv" Path="commentnicoliveview" Match="NavLinkMatch.All" />
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="配信情報管理" Icon="smart_display" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))">
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="コメント管理" Icon="chat" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))">
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="ユーザー管理" Icon="account_circle" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))">
+    </RadzenPanelMenuItem>
+    <RadzenPanelMenuItem Text="設定管理" Icon="settings">
+        <RadzenPanelMenuItem Text="アプリ設定管理" Icon="settings" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))">
+        </RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="プラグイン管理" Icon="extension" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))">
+        </RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="ヘルプ" Icon="help">
+            <RadzenPanelMenuItem Text="ホームページ" Icon="travel_explore" Path="https://twitter.com/HakuKazamaru" Target="_blank" rel="noopener noreferrer" Match="NavLinkMatch.All" />
+            <RadzenPanelMenuItem Text="使い方" Icon="help" Path="help" Match="NavLinkMatch.All" />
+            <RadzenPanelMenuItem Text="バージョン情報" Icon="info" Path="about" Match="NavLinkMatch.All" />
+        </RadzenPanelMenuItem>
+        <RadzenPanelMenuItem Text="デバッグ機能" Icon="bug_report">
+            <RadzenPanelMenuItem Text="配信管理" Icon="smart_display">
+                <RadzenPanelMenuItem Text="一覧" Icon="list" Path="streamlist" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="検索" Icon="find_in_page" Path="streamget" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="登録" Icon="mode_edit" Path="streampost" Match="NavLinkMatch.All" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="コメント管理" Icon="chat">
+                <RadzenPanelMenuItem Text="一覧" Icon="list" Path="commentlist" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="検索" Icon="find_in_page" Path="commentget" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="登録" Icon="mode_edit" Path="commentpost" Match="NavLinkMatch.All" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="ギフトコメント管理" Icon="card_giftcard">
+                <RadzenPanelMenuItem Text="一覧" Icon="list" Path="giftlist" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="検索" Icon="find_in_page" Path="giftget" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="登録" Icon="mode_edit" Path="giftpost" Match="NavLinkMatch.All" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="ユーザー管理" Icon="account_circle">
+                <RadzenPanelMenuItem Text="一覧" Icon="list" Path="userlist" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="検索" Icon="find_in_page" Path="userget" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="登録" Icon="mode_edit" Path="userpost" Match="NavLinkMatch.All" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="アプリ設定管理" Icon="settings">
+                <RadzenPanelMenuItem Text="一覧" Icon="list" Path="settinglist" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="検索" Icon="find_in_page" Path="settingget" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="登録" Icon="mode_edit" Path="settingpost" Match="NavLinkMatch.All" />
+            </RadzenPanelMenuItem>
+            <RadzenPanelMenuItem Text="プラグイン管理" Icon="extension">
+                <RadzenPanelMenuItem Text="一覧" Icon="list" Path="pluginlist" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="検索" Icon="find_in_page" Path="pluginget" Match="NavLinkMatch.All" />
+                <RadzenPanelMenuItem Text="登録" Icon="mode_edit" Path="pluginpost" Match="NavLinkMatch.All" />
+            </RadzenPanelMenuItem>
+        </RadzenPanelMenuItem>
+    </RadzenPanelMenuItem>
+</RadzenPanelMenu>
+
+
+@code {
+    private void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "機能は未実装だよ", options);
+}

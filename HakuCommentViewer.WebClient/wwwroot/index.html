@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>HakuCommentViewer</title>
+    <base href="/" />
+    <link href="css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="_content/Radzen.Blazor/css/dark-base.css" rel="stylesheet">
+    <link href="css/app.css" rel="stylesheet" />
+    <link href="HakuCommentViewer.WebClient.styles.css" rel="stylesheet" />
+    <link href="manifest.json" rel="manifest" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <script src="_content/Radzen.Blazor/Radzen.Blazor.js"></script>
+</head>
+
+<body style="">
+    <div id="app">
+        <div class="rz-layout">
+            <div class="rz-header">
+                <div class="rz-stack rz-display-flex rz-flex-row rz-align-items-center rz-justify-content-normal" style="--rz-gap:0px;;flex-wrap:nowrap;">
+                    <button class="rz-sidebar-toggle">
+                        <i class="rzi rz-display-flex rz-align-items-center">menu</i>
+                    </button>
+
+                    <label class="rz-label">コメントビュワー</label>
+
+                    <ul class="rz-menu rz-menu-closed menu-bar" id="BFpqC2q7bE" _bl_10="">
+
+                        <li class="rz-menu-toggle-item">
+                            <button class="rz-menu-toggle">
+                                <i class="rzi">menu</i>
+                            </button>
+                        </li>
+
+                        <li class="rz-navigation-item">
+                            <div class="rz-navigation-item-wrapper" onclick="Radzen.toggleMenuItem(this)">
+                                <div class="rz-navigation-item-link">
+                                    <i class="rzi rz-navigation-item-icon">save</i>
+                                    <span class="rz-navigation-item-text">ファイル</span>
+                                    <i class="rzi rz-navigation-item-icon-children">keyboard_arrow_down</i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="rz-navigation-item">
+                            <div class="rz-navigation-item-wrapper" onclick="Radzen.toggleMenuItem(this)" >
+                                <div class="rz-navigation-item-link">
+                                    <i class="rzi rz-navigation-item-icon">home_repair_service</i>
+                                    <span class="rz-navigation-item-text">ツール</span>
+                                    <i class="rzi rz-navigation-item-icon-children">keyboard_arrow_down</i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="rz-navigation-item">
+                            <div class="rz-navigation-item-wrapper" onclick="Radzen.toggleMenuItem(this)" >
+                                <div class="rz-navigation-item-link">
+                                    <i class="rzi rz-navigation-item-icon">settings</i>
+                                    <span class="rz-navigation-item-text">設定</span>
+                                    <i class="rzi rz-navigation-item-icon-children">keyboard_arrow_down</i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="rz-navigation-item">
+                            <div class="rz-navigation-item-wrapper" onclick="Radzen.toggleMenuItem(this)">
+                                <div class="rz-navigation-item-link">
+                                    <i class="rzi rz-navigation-item-icon">extension</i>
+                                    <span class="rz-navigation-item-text">プラグイン</span>
+                                    <i class="rzi rz-navigation-item-icon-children">keyboard_arrow_down</i>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="rz-navigation-item">
+                            <div class="rz-navigation-item-wrapper" onclick="Radzen.toggleMenuItem(this)" >
+                                <div class="rz-navigation-item-link">
+                                    <i class="rzi rz-navigation-item-icon">help_center</i>
+                                    <span class="rz-navigation-item-text">ヘルプ</span>
+                                    <i class="rzi rz-navigation-item-icon-children">keyboard_arrow_down</i>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="rz-sidebar rz-sidebar-expanded">
+                <ul class="rz-panel-menu" ">
+                    <li class="rz-navigation-item" _bl_13="">
+                        <div class="rz-navigation-item-wrapper" style="margin-right:0px">
+                            <a style="" href="" class="rz-navigation-item-link active">
+                                <i class="rzi rz-navigation-item-icon" style="">home</i>
+                                <span class="rz-navigation-item-text">ホーム</span>
+                            </a>
+                        </div>
+                    </li>
+                    <li class="rz-navigation-item">
+                        <div class="rz-navigation-item-wrapper" style="margin-right:0px">
+                            <div class="rz-navigation-item-link" style="">
+                                <i class="rzi rz-navigation-item-icon" style="">chat</i>
+                                <span class="rz-navigation-item-text">コメビュ</span>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="rz-navigation-item">
+                        <div class="rz-navigation-item-wrapper" style="margin-right:0px">
+                            <div class="rz-navigation-item-link" style="">
+                                <i class="rzi rz-navigation-item-icon" style="">smart_display</i>
+                                <span class="rz-navigation-item-text">配信管理</span>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="rz-navigation-item">
+                        <div class="rz-navigation-item-wrapper" style="margin-right:0px">
+                            <div class="rz-navigation-item-link" style="">
+                                <i class="rzi rz-navigation-item-icon" style="">chat</i>
+                                <span class="rz-navigation-item-text">コメント管理</span>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="rz-navigation-item">
+                        <div class="rz-navigation-item-wrapper" style="margin-right:0px">
+                            <div class="rz-navigation-item-link" style="">
+                                <i class="rzi rz-navigation-item-icon" style="">account_circle</i>
+                                <span class="rz-navigation-item-text">ユーザー管理</span>
+                            </div>
+                        </div>
+                    </li>
+                    <li class="rz-navigation-item">
+                        <div class="rz-navigation-item-wrapper" style="margin-right:0px">
+                            <div class="rz-navigation-item-link" style="">
+                                <i class="rzi rz-navigation-item-icon" style="">settings</i>
+                                <span class="rz-navigation-item-text">設定管理</span>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="rz-body">
+                <div class="rz-p-4" style="height:100%">
+                    <div class="d-flex justify-content-center align-items-center" style="height:100%;">
+                        <h1>
+                            よみこみちゅう...
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </h1>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rz-footer">
+                初期化中
+            </div>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        エラーが発生しました。
+        <a href="" class="reload">再読み込み</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
+</body>
+
+</html>

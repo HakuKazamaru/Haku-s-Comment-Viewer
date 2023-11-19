@@ -1,0 +1,697 @@
+@inject ILogger<StreamManagement> Logger
+@implements IDisposable
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+@inject Radzen.DialogService dialogService
+
+@using HakuCommentViewer.Common.Models
+@inject Container container
+
+<div style="height: 20%;">
+    <h6>・ストリーム管理</h6>
+    <hr />
+</div>
+<div style="overflow:auto;height: 80%;">
+    <RadzenButton class="mt-2 mb-4"
+                  Text="新規登録"
+                  Icon="add_circle_outline"
+                  ButtonStyle="ButtonStyle.Success"
+                  Click="@InsertRow"
+                  Disabled=@(streamManagementViewToInsert != null || streamManagementViewToUpdate != null) />
+
+    <RadzenDataGrid @ref="streamManagementViewGrid"
+                    AllowAlternatingRows="false"
+                    AllowColumnResize="true"
+                    AllowFiltering="true"
+                    AllowPaging="true"
+                    AllowSorting="true"
+                    PageSize="5"
+                    EditMode="DataGridEditMode.Single"
+                    Data="@streamManagementViewList"
+                    TItem="StreamManagementView"
+                    EmptyText="配信枠が登録されていません。"
+                    RowUpdate="@OnUpdateRow"
+                    RowCreate="@OnCreateRow"
+                    IsLoading=@isLoading
+                    Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                    ColumnWidth="100px">
+        <Columns>
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="StreamNo" Title="#" Width="2.5em" Filterable="false" TextAlign="TextAlign.Right" Frozen="true" />
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="StreamManagementId" Title="配信管理ID" Width="80px" Visible="false" />
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="StreamId" Title="配信ID" Width="80px" Visible="false" />
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="StreamUrl" Title="URL" Width="40vw">
+                <EditTemplate Context="streamManagementView">
+                    <RadzenTextBox @bind-Value="streamManagementView.StreamUrl" Name="StreamUrl" Style="width:100%"></RadzenTextBox>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="CommentRoomId" Title="コメント(チャット)ルームID" Width="100px" Visible="false" />
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="StreamSiteId" Title="配信サイトID" Width="100px" Visible="false" />
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="IsConnected" Title="接続" Width="5em">
+                <Template Context="streamManagementView">
+                    <RadzenSwitch @bind-Value="streamManagementView.IsConnected" Name="IsConnected" Change="args => IsConnected_OnChange(args,streamManagementView.StreamNo,streamManagementView.StreamManagementId,streamManagementView.StreamUrl)" />
+                </Template>
+                <EditTemplate Context="streamManagementView">
+                    <RadzenSwitch @bind-Value="streamManagementView.IsConnected" Name="IsConnected" Disabled="true" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="UseCommentGenerator" Title="ｺﾒｼﾞｪﾈ" Width="5em" Visible="false">
+                <Template Context="streamManagementView">
+                    <RadzenSwitch @bind-Value="streamManagementView.UseCommentGenerator" Name="UseCommentGenerator" Disabled="true" />
+                </Template>
+                <EditTemplate Context="streamManagementView">
+                    <RadzenSwitch @bind-Value="streamManagementView.UseCommentGenerator" Name="UseCommentGenerator" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="UseNarrator" Title="読上げ" Width="5em" Visible="false">
+                <Template Context="streamManagementView">
+                    <RadzenSwitch @bind-Value="streamManagementView.UseNarrator" Name="UseNarrator" Disabled="true" />
+                </Template>
+                <EditTemplate Context="streamManagementView">
+                    <RadzenSwitch @bind-Value="streamManagementView.UseNarrator" Name="UseNarrator" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="StreamManagementView" Property="Note" Title="備考" Width="80vw">
+                <EditTemplate Context="streamManagementView">
+                    <RadzenTextArea @bind-Value="streamManagementView.Note" Name="Note" Style="width:100%" />
+                </EditTemplate>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="StreamManagementView" Context="streamManagementView" Width="11.5em" Filterable="false" Sortable="false" TextAlign="TextAlign.Right" Frozen="true" FrozenPosition="FrozenColumnPosition.Right">
+                <Template Context="streamManagementView">
+                    <RadzenButton Icon="edit" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@(args => EditRow(streamManagementView))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Success" Icon="account_circle" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => ShowUseList(streamManagementView))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Warning" Icon="card_giftcard" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => ShowGiftList(streamManagementView))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(streamManagementView))" @onclick:stopPropagation="true">
+                    </RadzenButton>
+                </Template>
+                <EditTemplate Context="streamManagementView">
+                    <RadzenButton Icon="check" ButtonStyle="ButtonStyle.Success" Variant="Variant.Flat" Size="ButtonSize.Medium" Click="@((args) => SaveRow(streamManagementView))">
+                    </RadzenButton>
+                    <RadzenButton Icon="close" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@((args) => CancelEdit(streamManagementView))">
+                    </RadzenButton>
+                    <RadzenButton ButtonStyle="ButtonStyle.Danger" Icon="delete" Variant="Variant.Flat" Shade="Shade.Lighter" Size="ButtonSize.Medium" class="my-1 ms-1" Click="@(args => DeleteRow(streamManagementView))">
+                    </RadzenButton>
+                </EditTemplate>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</div>
+
+@code {
+    private bool isLoading = false;
+    private string hubUrl = "";
+
+    private HubConnection hubConnection;
+    private RadzenDataGrid<StreamManagementView> streamManagementViewGrid;
+    private List<StreamManagementView> streamManagementViewList = new List<StreamManagementView>();
+
+    private StreamManagementView streamManagementViewToInsert;
+    private StreamManagementView streamManagementViewToUpdate;
+
+    /// <summary>
+    /// 編集データリセット
+    /// </summary>
+    private void Reset()
+    {
+        streamManagementViewToInsert = null;
+        streamManagementViewToUpdate = null;
+    }
+
+    /// <summary>
+    /// DBデータ挿入
+    /// </summary>
+    /// <param name="streamManagementView"></param>
+    private async Task OnCreateRow(StreamManagementView streamManagementView)
+    {
+        StreamManagementInfo streamManagementInfo = new StreamManagementInfo();
+        StreamInfo streamInfo = new StreamInfo();
+
+        streamManagementInfo.StreamManagementId = streamManagementView.StreamManagementId;
+        streamManagementInfo.StreamId = streamManagementView.StreamId;
+        streamManagementInfo.StreamNo = streamManagementView.StreamNo;
+        streamManagementInfo.IsConnected = false;
+        streamManagementInfo.UseCommentGenerator = streamManagementView.UseCommentGenerator;
+        streamManagementInfo.UseNarrator = streamManagementView.UseNarrator;
+        streamManagementInfo.Note = streamManagementView.Note;
+
+        streamInfo.StreamId = streamManagementInfo.StreamId;
+        streamInfo.StreamUrl = streamManagementView.StreamUrl;
+
+        try
+        {
+            StreamInfo? tmpStreamInfo;
+            try
+            {
+                tmpStreamInfo = await GetStreamInfo(streamInfo.StreamUrl, true);
+                if (tmpStreamInfo.StreamId is not null)
+                {
+                    streamInfo.StreamId = tmpStreamInfo.StreamId;
+                    streamManagementInfo.StreamId = tmpStreamInfo.StreamId;
+                }
+                else
+                {
+                    tmpStreamInfo = await GetStreamInfo(streamInfo.StreamId);
+                    if (tmpStreamInfo.StreamId is not null)
+                    {
+                        streamManagementInfo.StreamId = Guid.NewGuid().ToString();
+                        streamInfo.StreamId = streamManagementInfo.StreamId;
+                    }
+                }
+            }
+            catch { tmpStreamInfo = null; }
+
+            await Http.PostAsJsonAsync<StreamInfo>("StreamInfo", streamInfo);
+            await Http.PostAsJsonAsync<StreamManagementInfo>("StreamManagementInfo", streamManagementInfo);
+            string message = string.Format("[{0}]<br>配信枠を登録しました。", DateTime.Now.ToString());
+            ShowInfoMessage(message);
+            streamManagementViewToInsert = null;
+        }
+        catch (Exception e)
+        {
+            string message = $"エラー: 配信枠の登録に失敗しました。: {e.Message}";
+            ShowErrorMessage("DeleteRow", "", message);
+        }
+    }
+
+    /// <summary>
+    /// DBデータ更新
+    /// </summary>
+    /// <param name="streamManagementView"></param>
+    private async Task OnUpdateRow(StreamManagementView streamManagementView)
+    {
+        StreamManagementInfo streamManagementInfo = new StreamManagementInfo();
+        StreamInfo streamInfo = new StreamInfo();
+
+        streamManagementInfo.StreamManagementId = streamManagementView.StreamManagementId;
+        streamManagementInfo.StreamId = streamManagementView.StreamId;
+        streamManagementInfo.StreamNo = streamManagementView.StreamNo;
+        streamManagementInfo.IsConnected = streamManagementView.IsConnected;
+        streamManagementInfo.UseCommentGenerator = streamManagementView.UseCommentGenerator;
+        streamManagementInfo.UseNarrator = streamManagementView.UseNarrator;
+        streamManagementInfo.Note = streamManagementView.Note;
+
+        streamInfo.StreamId = streamManagementInfo.StreamId;
+        streamInfo.StreamUrl = streamManagementView.StreamUrl;
+
+        Reset();
+
+        try
+        {
+            StreamInfo? tmpStreamInfo;
+            try
+            {
+                tmpStreamInfo = await GetStreamInfo(streamInfo.StreamUrl, true);
+                if (tmpStreamInfo.StreamId is not null)
+                {
+                    streamInfo.StreamId = tmpStreamInfo.StreamId;
+                    streamManagementInfo.StreamId = tmpStreamInfo.StreamId;
+                }
+                else
+                {
+                    tmpStreamInfo = await GetStreamInfo(streamInfo.StreamId);
+                    if (tmpStreamInfo.StreamId is not null)
+                    {
+                        streamManagementInfo.StreamId = Guid.NewGuid().ToString();
+                        streamInfo.StreamId = streamManagementInfo.StreamId;
+                    }
+                }
+            }
+            catch { tmpStreamInfo = null; }
+
+            await Http.PostAsJsonAsync<StreamInfo>("StreamInfo", streamInfo);
+            await Http.PostAsJsonAsync<StreamManagementInfo>("StreamManagementInfo/Update", streamManagementInfo);
+            string message = string.Format("[{0}]<br>配信枠を更新しました。", DateTime.Now.ToString());
+            ShowInfoMessage(message);
+        }
+        catch (Exception e)
+        {
+            string message = $"エラー: 配信枠の更新に失敗しました。: {e.Message}";
+            ShowErrorMessage("DeleteRow", "", message);
+        }
+    }
+
+    /// <summary>
+    /// 行挿入
+    /// </summary>
+    /// <returns></returns>
+    private async Task InsertRow()
+    {
+        int tmpNum = 1;
+
+        streamManagementViewToInsert = new StreamManagementView();
+        streamManagementViewToInsert.StreamManagementId = Guid.NewGuid().ToString();
+        streamManagementViewToInsert.StreamId = Guid.NewGuid().ToString();
+
+        for (int j = 0; j < streamManagementViewList.Count; j++)
+        for (int i = 0; i < streamManagementViewList.Count; i++)
+        {
+            if (streamManagementViewList[i].StreamNo == tmpNum)
+            {
+                tmpNum = streamManagementViewList[i].StreamNo + 1;
+            }
+        }
+
+        streamManagementViewToInsert.StreamNo = tmpNum;
+
+        streamManagementViewList.Add(streamManagementViewToInsert);
+        await streamManagementViewGrid.InsertRow(streamManagementViewToInsert);
+    }
+
+    /// <summary>
+    /// 行更新
+    /// </summary>
+    /// <param name="StreamManagementView"></param>
+    /// <returns></returns>
+    private async Task SaveRow(StreamManagementView StreamManagementView)
+    {
+        await streamManagementViewGrid.UpdateRow(StreamManagementView);
+    }
+
+    /// <summary>
+    /// 行編集
+    /// </summary>
+    /// <param name="StreamManagementView"></param>
+    /// <returns></returns>
+    private async Task EditRow(StreamManagementView StreamManagementView)
+    {
+        streamManagementViewToUpdate = StreamManagementView;
+        await streamManagementViewGrid.EditRow(StreamManagementView);
+    }
+
+    /// <summary>
+    /// 編集キャンセル
+    /// </summary>
+    /// <param name="StreamManagementView"></param>
+    private void CancelEdit(StreamManagementView StreamManagementView)
+    {
+        Reset();
+        streamManagementViewGrid.CancelEditRow(StreamManagementView);
+    }
+
+    /// <summary>
+    /// 行削除
+    /// </summary>
+    /// <param name="streamManagementView"></param>
+    /// <returns></returns>
+    private async Task DeleteRow(StreamManagementView streamManagementView)
+    {
+        StreamManagementInfo streamManagementInfo = new StreamManagementInfo();
+
+        streamManagementInfo.StreamManagementId = streamManagementView.StreamManagementId;
+        streamManagementInfo.StreamId = streamManagementView.StreamId;
+        streamManagementInfo.StreamNo = streamManagementView.StreamNo;
+        streamManagementInfo.IsConnected = streamManagementView.IsConnected;
+        streamManagementInfo.UseCommentGenerator = streamManagementView.UseCommentGenerator;
+        streamManagementInfo.UseNarrator = streamManagementView.UseNarrator;
+        streamManagementInfo.Note = streamManagementView.Note;
+
+        Reset();
+
+        if (streamManagementViewList.Contains(streamManagementView))
+        {
+            try
+            {
+                await Http.PostAsJsonAsync<StreamManagementInfo>("StreamManagementInfo/Delete", streamManagementInfo);
+                streamManagementViewList.Remove(streamManagementView);
+                string message = string.Format("[{0}]<br>配信枠を削除しました。", DateTime.Now.ToString());
+                ShowInfoMessage(message);
+                await streamManagementViewGrid.Reload();
+            }
+            catch (Exception e)
+            {
+                string message = $"エラー: 配信枠の削除に失敗しました。: {e.Message}";
+                ShowErrorMessage("DeleteRow", "", message);
+            }
+        }
+        else
+        {
+            streamManagementViewGrid.CancelEditRow(streamManagementView);
+            await streamManagementViewGrid.Reload();
+        }
+    }
+
+    /// <summary>
+    /// ユーザー一覧表示
+    /// </summary>
+    /// <param name="streamManagementView"></param>
+    private async Task ShowUseList(StreamManagementView streamManagementView)
+    {
+        try
+        {
+            StreamInfo streamInfo = await Http.GetFromJsonAsync<StreamInfo>(
+                    $"StreamInfo/GetByUrl?url={System.Web.HttpUtility.UrlEncode(streamManagementView.StreamUrl)}");
+            var dParam = new Dictionary<string, object>() {
+                { "StreamSiteId", streamInfo.StreamSiteId } ,
+                { "StreamInfoId", streamInfo.StreamId }
+            };
+            var dOpt = new Radzen.DialogOptions() { Width = "90vw", Height = "90vh", Left = "5vw", Top = "5vh" };
+            dialogService.Open<UserListDialog>("ユーザー一覧", dParam, dOpt);
+        }
+        catch (Exception e)
+        {
+            ShowErrorMessage("", "", $"ユーザー情報の取得に失敗しました。: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// ギフト一覧表示
+    /// </summary>
+    /// <param name="streamManagementView"></param>
+    private async Task ShowGiftList(StreamManagementView streamManagementView)
+    {
+        try
+        {
+            StreamInfo streamInfo = await Http.GetFromJsonAsync<StreamInfo>(
+                    $"StreamInfo/GetByUrl?url={System.Web.HttpUtility.UrlEncode(streamManagementView.StreamUrl)}");
+            var dParam = new Dictionary<string, object>() {
+                { "StreamSiteId", streamInfo.StreamSiteId } ,
+                { "StreamInfoId", streamInfo.StreamId }
+            };
+            var dOpt = new Radzen.DialogOptions() { Width = "90vw", Height = "90vh", Left = "5vw", Top = "5vh" };
+            dialogService.Open<GiftListDialog>("スーパーチャット/ギフト一覧", dParam, dOpt);
+        }
+        catch (Exception e)
+        {
+            ShowErrorMessage("", "", $"ユーザー情報の取得に失敗しました。: {e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    protected async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        Reset();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        StreamManagementInfo[]? tmpStreamManagementInfoList;
+
+        container.OnChange += this.StateHasChanged;
+
+        streamManagementViewList.Clear();
+
+        await ShowLoading();
+        tmpStreamManagementInfoList = await Http.GetFromJsonAsync<StreamManagementInfo[]>("StreamManagementInfo");
+
+        foreach (var streamManagementInfo in tmpStreamManagementInfoList)
+        {
+            StreamManagementView tmpStreamManagementView = new StreamManagementView();
+            StreamInfo? streamInfo;
+
+
+            tmpStreamManagementView.StreamManagementId = streamManagementInfo.StreamManagementId;
+            tmpStreamManagementView.StreamId = streamManagementInfo.StreamId;
+            tmpStreamManagementView.StreamNo = streamManagementInfo.StreamNo;
+            tmpStreamManagementView.IsConnected = streamManagementInfo.IsConnected;
+            tmpStreamManagementView.UseCommentGenerator = streamManagementInfo.UseCommentGenerator;
+            tmpStreamManagementView.UseNarrator = streamManagementInfo.UseNarrator;
+            tmpStreamManagementView.Note = streamManagementInfo.Note;
+
+            try { streamInfo = await GetStreamInfo(streamManagementInfo.StreamId.ToString()); }
+            catch { streamInfo = null; }
+            if (streamInfo is not null)
+            {
+                tmpStreamManagementView.StreamUrl = streamInfo.StreamUrl;
+            }
+            else
+            {
+                tmpStreamManagementView.StreamUrl = "NULL";
+            }
+
+            streamManagementViewList.Add(tmpStreamManagementView);
+        }
+
+        await streamManagementViewGrid.Reload();
+
+        try
+        {
+            string baseUrl = navigationManager.BaseUri;
+            hubUrl = baseUrl.TrimEnd('/') + "/commenthub";
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .Build();
+
+            hubConnection.On<string, string>("Starting", Starting);
+            hubConnection.On<string, bool, string>("StartResult", StartResult);
+            hubConnection.On<string>("Stopping", Stopping);
+            hubConnection.On<string>("Stoped", Stoped);
+            hubConnection.On<string, string, string>("ErrorMessage", ShowErrorMessage);
+
+            // 自動再接続処理
+            hubConnection.Closed += async (exception) =>
+            {
+                if (exception is not null)
+                {
+                    ShowWarnMessage("内部サーバーとの接続が切断されました。再接続中...");
+
+                    for (int i = 0; i < this.container.RetryCount; i++)
+                    {
+                        try
+                        {
+                            await hubConnection.StartAsync();
+                            ShowInfoMessage($"[{i}]内部サーバーに再接続しました。");
+                            break;
+                        }
+                        catch (Exception e)
+                        {
+                            string message = $"[{i}] 内部サーバーへの再接続に失敗しました。<br>エラー: {e.Message}";
+                            ShowErrorMessage("", "", message);
+                        }
+                        await Task.Delay(1000);
+                    }
+                }
+                else
+                {
+                    ShowInfoMessage("内部サーバーとの接続を切断しました。");
+                }
+            };
+
+            await hubConnection.StartAsync();
+
+            this.container.FooterText = "配信管理画面の初期化が完了しました。";
+        }
+        catch (Exception e)
+        {
+            string message = $"内部サーバーへの接続に失敗しました。<br>エラー:{e.Message}";
+            ShowErrorMessage("", "", message);
+        }
+    }
+
+    /// <summary>
+    /// コメント取得開始
+    /// </summary>
+    /// <param name="streamNo"></param>
+    /// <param name="streamUrl"></param>
+    private void Starting(string streamNo, string streamUrl)
+    {
+        string message = "配信管理番号:" + streamNo + "<br>{0}へ接続します　URL:{1}";
+        if (streamUrl.IndexOf("youtube.com") > -1) { message = string.Format(message, "YouTube Live", streamUrl); }
+        else if (streamUrl.IndexOf("nicovideo.jp") > -1) { message = string.Format(message, "ニコニコ生放送", streamUrl); }
+        ShowInfoMessage(message);
+    }
+
+    /// <summary>
+    /// コメント取得開始結果
+    /// </summary>
+    /// <param name="streamNo"></param>
+    /// <param name="result"></param>
+    /// <param name="message"></param>
+    private async Task StartResult(string streamNo, bool result, string message = "")
+    {
+        string tmpMessage = "配信管理番号:{0}<br>{1}";
+        if (result)
+        {
+            tmpMessage = string.Format(tmpMessage, streamNo, "接続しました。");
+            ShowInfoMessage(tmpMessage);
+        }
+        else
+        {
+            int tmpInt = -1;
+            tmpMessage = string.Format(tmpMessage, streamNo, string.Format("接続に失敗しました。<br>エラーメッセージ:{0}", message));
+            ShowErrorMessage("Start", streamNo, tmpMessage);
+            if (int.TryParse(streamNo, out tmpInt))
+            {
+                streamManagementViewList[tmpInt - 1].IsConnected = false;
+                await streamManagementViewGrid.UpdateRow(streamManagementViewList[tmpInt - 1]);
+                await streamManagementViewGrid.Reload();
+            }
+        }
+    }
+
+    /// <summary>
+    /// コメント取得停止開始
+    /// </summary>
+    /// <param name="streamNo"></param>
+    private void Stopping(string streamNo)
+    {
+        string message = "配信管理番号:" + streamNo + "<br>切断します";
+        ShowInfoMessage(message);
+    }
+
+    /// <summary>
+    /// コメント取得停止
+    /// </summary>
+    /// <param name="streamNo"></param>
+    private async Task Stoped(string streamNo)
+    {
+        int tmpInt = -1;
+        string message = "配信管理番号:" + streamNo + "<br>切断しました";
+
+        ShowInfoMessage(message);
+
+        if (int.TryParse(streamNo, out tmpInt))
+        {
+            streamManagementViewList[tmpInt - 1].IsConnected = false;
+            await streamManagementViewGrid.UpdateRow(streamManagementViewList[tmpInt - 1]);
+            await streamManagementViewGrid.Reload();
+        }
+    }
+
+    /// <summary>
+    /// 配信情報取得
+    /// </summary>
+    /// <param name="streamId"></param>
+    /// <param name="url"></param>
+    /// <returns></returns>
+    private async Task<StreamInfo?> GetStreamInfo(string streamId, bool url = false)
+    {
+        if (url)
+        {
+            return await Http.GetFromJsonAsync<StreamInfo>("StreamInfo/GetByUrl?url=" + System.Web.HttpUtility.UrlEncode(streamId));
+        }
+        else
+        {
+            return await Http.GetFromJsonAsync<StreamInfo>("StreamInfo/Get?id=" + streamId);
+        }
+    }
+
+    /// <summary>
+    /// 通知メッセージ表示処理
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowInfoMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Success,
+                Summary = "情報",
+                Detail = message,
+                Duration = 4000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// 警告メッセージ表示
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowWarnMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Warning,
+                Summary = "警告",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="funcName"></param>
+    /// <param name="streamNo"></param>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string funcName, string streamNo, string message)
+    {
+        if (funcName == "Start" || funcName == "Stop")
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "エラー",
+                    Detail = message,
+                    Duration = 10000
+                });
+            this.container.FooterText = message.Replace("<br>", "　");
+        }
+        else if (!string.IsNullOrWhiteSpace(streamNo))
+        {
+            string tmpMessage = "[" + funcName + "]配信管理番号:" + streamNo + "<br>" + message;
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "エラー",
+                    Detail = tmpMessage,
+                    Duration = 10000
+                });
+            this.container.FooterText = tmpMessage.Replace("<br>", "　");
+        }
+        else
+        {
+            NotificationService.Notify(new NotificationMessage
+                {
+                    Severity = NotificationSeverity.Error,
+                    Summary = "エラー",
+                    Detail = message,
+                    Duration = 10000
+                });
+            this.container.FooterText = message.Replace("<br>", "　");
+        }
+    }
+
+    /// <summary>
+    ///コメント取得開始
+    /// </summary>
+    /// <param name="value"></param>
+    private async Task IsConnected_OnChange(bool? value, int streamNo, string streamManagementId, string streamUrl)
+    {
+        if (value == true)
+        {
+            await hubConnection.SendAsync("Start", streamNo.ToString(), streamManagementId, streamUrl);
+        }
+        else
+        {
+            await hubConnection.SendAsync("Stop", streamNo.ToString(), streamManagementId);
+        }
+    }
+
+    /// <summary>
+    /// WebSocket切断処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task DisconnectAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        }
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public async void Dispose()
+    {
+        await DisconnectAsync();
+        container.OnChange -= this.StateHasChanged;
+    }
+}

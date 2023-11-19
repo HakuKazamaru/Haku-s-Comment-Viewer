@@ -1,0 +1,80 @@
+﻿@page "/commentlist"
+@inject ILogger<CommentList> Logger
+@inject HttpClient Http
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>コメント一覧</PageTitle>
+
+<h6>コメント一覧</h6>
+<hr />
+
+<RadzenDataGrid AllowFiltering="true"
+                AllowColumnResize="true"
+                AllowAlternatingRows="false"
+                FilterMode="FilterMode.Advanced"
+                AllowSorting="true"
+                PageSize="50"
+                AllowPaging="true"
+                PagerHorizontalAlign="HorizontalAlign.Left"
+                ShowPagingSummary="true"
+                Data="@commentInfoList"
+                TItem="CommentInfo"
+                ColumnWidth="400px"
+                LogicalFilterOperator="LogicalFilterOperator.Or"
+                IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                Style="heigth:95%">
+    <Columns>
+        <RadzenDataGridColumn TItem="CommentInfo" Property="StreamInfoId" Title="配信情報ID" Width="100px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="TimeStampUSec" Title="タイムスタンプ" Width="180px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="CommentId" Title="コメントID" Width="100px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="StreamSiteId" Title="配信サイトID" Width="100px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="StreamManagementId" Title="配信管理ID" Width="100px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="UserId" Title="ユーザーID" Width="100px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="UserName" Title="ユーザー名" Width="160px" />
+        <RadzenDataGridColumn TItem="CommentInfo" Property="CommentText" Title="コメント" Width="400px" />
+    </Columns>
+</RadzenDataGrid>
+
+@code {
+    bool isLoading = false;
+    private CommentInfo[]? commentInfoList;
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    protected async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// ページ読み込み時処理
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        List<CommentInfo>? tmpCommentInfoList = new List<CommentInfo>();
+
+        await ShowLoading();
+        commentInfoList = await Http.GetFromJsonAsync<CommentInfo[]>("CommentInfo");
+
+        foreach (var commentInfo in commentInfoList)
+        {
+            string tmpString = Common.UnixTimeToDateTimeString(commentInfo.TimeStampUSec);
+            CommentInfo tmpCommentInfo = commentInfo;
+
+            if (!string.IsNullOrWhiteSpace(tmpString))
+            {
+                tmpCommentInfo.TimeStampUSec = tmpString;
+            }
+
+            tmpCommentInfoList.Add(tmpCommentInfo);
+        }
+
+        commentInfoList = tmpCommentInfoList.ToArray();
+    }
+}

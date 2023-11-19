@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:local="clr-namespace:HakuCommentViewer"
+             xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+             x:Class="HakuCommentViewer.MainPage"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+    <ContentPage.Resources>
+    </ContentPage.Resources>
+    <ContentPage.MenuBarItems>
+        <MenuBarItem Text="ファイル" >
+            <MenuFlyoutItem x:Name="mfiExit"
+                            Text="終了"
+                            Clicked="mfiExit_Clicked"
+                            Command="{Binding ExitCommand}"/>
+        </MenuBarItem>
+    </ContentPage.MenuBarItems>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="設定" Order="Secondary"></ToolbarItem>
+        <ToolbarItem Text="このアプリについて" Order="Secondary"></ToolbarItem>
+        <ToolbarItem Text="終了" Order="Secondary" Clicked="mfiExit_Clicked"></ToolbarItem>
+    </ContentPage.ToolbarItems>
+    <ContentPage.Content>
+        <StackLayout>
+            <BlazorWebView HostPage="wwwroot/index.html" VerticalOptions="FillAndExpand">
+                <BlazorWebView.RootComponents>
+                    <RootComponent Selector="#app" ComponentType="{x:Type local:Main}" />
+                </BlazorWebView.RootComponents>
+            </BlazorWebView>
+            <Label Text="未初期化"/>
+        </StackLayout>
+    </ContentPage.Content>
+</ContentPage>

@@ -1,0 +1,197 @@
+﻿@page "/giftpost"
+@inject ILogger<GiftPost> Logger
+@implements IDisposable
+@using Microsoft.AspNetCore.SignalR.Client;
+
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ギフトコメント投稿</PageTitle>
+
+<h6>投稿内容</h6>
+<hr />
+
+<table>
+    <tbody>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamInfoId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">タイムスタンプ(UtcSec)</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "TimeStampUSec")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメントID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "CommentId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信サイトID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamSiteId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信管理ID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamManagementId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザーID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "UserId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザー名</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "UserName")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">種別</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "GiftType")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">金額/個数</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "GiftValue")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "CommentText")) class="w-100" /></td>
+        </tr>
+    </tbody>
+</table>
+<RadzenButton Click=@(args => Submit()) Text="登録" ButtonStyle="ButtonStyle.Primary" />
+
+@code {
+    private string hubUrl = "";
+    private string value;
+    private GiftInfo? postdata = new GiftInfo();
+    private HubConnection hubConnection;
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            string baseUrl = navigationManager.BaseUri;
+            hubUrl = baseUrl.TrimEnd('/') + "/commenthub";
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(hubUrl)
+                .Build();
+            await hubConnection.StartAsync();
+        }
+        catch (Exception e)
+        {
+            string message = $"エラー: 内部サーバーへの接続に失敗しました。: {e.Message}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "エラー", Detail = message, Duration = 4000 });
+        }
+    }
+
+    /// <summary>
+    /// テキストボックス値変更時
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="name"></param>
+    private void OnTextChange(string value, string name)
+    {
+        switch (name)
+        {
+            case "StreamInfoId":
+                {
+                    postdata.StreamInfoId = value;
+                    break;
+                }
+            case "TimeStampUSec":
+                {
+                    postdata.TimeStampUSec = value;
+                    break;
+                }
+            case "CommentId":
+                {
+                    postdata.CommentId = value;
+                    break;
+                }
+            case "StreamSiteId":
+                {
+                    postdata.StreamSiteId = value;
+                    break;
+                }
+            case "StreamManagementId":
+                {
+                    postdata.StreamManagementId = value;
+                    break;
+                }
+            case "UserId":
+                {
+                    postdata.UserId = value;
+                    break;
+                }
+            case "UserName":
+                {
+                    postdata.UserName = value;
+                    break;
+                }
+            case "GiftType":
+                {
+                    postdata.GiftType = value;
+                    break;
+                }
+            case "GiftValue":
+                {
+                    int tmpInt = -1;
+                    int.TryParse(value, out tmpInt);
+                    postdata.GiftValue = tmpInt;
+                    break;
+                }
+            case "CommentText":
+                {
+                    postdata.CommentText = value;
+                    break;
+                }
+            default:
+                {
+                    break;
+                }
+        }
+    }
+
+    /// <summary>
+    /// 登録ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task Submit()
+    {
+        await Http.PostAsJsonAsync<GiftInfo>("GiftInfo", postdata);
+        await hubConnection.SendAsync("ReceiveMessage",
+            postdata.TimeStampUSec, postdata.CommentId, -1,
+            postdata.UserId, postdata.UserName, postdata.CommentText);
+        await hubConnection.SendAsync("ReceiveGift",
+            postdata.TimeStampUSec, postdata.CommentId, -1,
+            postdata.UserId, postdata.UserName, postdata.GiftType, postdata.GiftValue, postdata.CommentText);
+        string message = string.Format("[{0}]<br>投稿しました。", DateTime.Now.ToString());
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = message, Duration = 4000 });
+    }
+
+    /// <summary>
+    /// WebSocket切断処理
+    /// </summary>
+    /// <returns></returns>
+    private async Task DisconnectAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.StopAsync();
+            await hubConnection.DisposeAsync();
+            hubConnection = null;
+        }
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public async void Dispose()
+    {
+        await DisconnectAsync();
+    }
+}

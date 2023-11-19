@@ -1,0 +1,104 @@
+﻿@page "/streamget"
+@inject ILogger<StreamGet> Logger
+@inject HttpClient Http
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ユーザー指定取得</PageTitle>
+
+<h6>ユーザー指定取得</h6>
+<hr />
+
+<div>
+    <table>
+        <tbody>
+            <tr>
+                <th>配信サイトID</th>
+                <td><input type="text" @bind="@streamInfo!.StreamId" /></td>
+            </tr>
+        </tbody>
+    </table>
+    <button @onclick="OnClickAsync">検索</button>
+</div>
+
+@if (search)
+{
+    <hr />
+    <table>
+        <tbody>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.StreamId</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信名</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.StreamName</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID(配信サイト内ID)</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.StreamPageId</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信URL</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.StreamUrl</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント(チャット)ルームID</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.CommentRoomId</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信サイトID</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.StreamSiteId</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信開始日時</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.StartDateTime</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信終了日時</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.EndDateTime</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">視聴者数</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.ViewerCount</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント数</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.CommentCount</RadzenText></td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">備考</RadzenText></th>
+                <td><RadzenText class="w-100">@streamInfo.Note</RadzenText></td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+}
+
+@code {
+    private bool search = false;
+    private StreamInfo? streamInfo = new();
+
+    /// <summary>
+    /// 検索ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task OnClickAsync()
+    {
+        try
+        {
+            streamInfo = await Http.GetFromJsonAsync<StreamInfo>(string.Format("StreamInfo/Get?StreamId={0}", streamInfo.StreamId));
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = "検索を実行しました。", Duration = 4000 });
+            search = true;
+        }
+        catch (Exception e)
+        {
+            string message = $"エラー: 内部サーバーへの接続に失敗しました。: {e.Message}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "エラー", Detail = message, Duration = 4000 });
+            search = false;
+        }
+    }
+}

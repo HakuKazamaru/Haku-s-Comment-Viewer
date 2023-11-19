@@ -1,0 +1,82 @@
+﻿@page "/userget"
+@inject ILogger<UserGet> Logger
+
+@inject HttpClient Http
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ユーザー指定取得</PageTitle>
+
+<h6>ユーザー指定取得</h6>
+<hr />
+
+<div>
+    <table>
+        <tbody>
+            <tr>
+                <th>配信サイトID</th>
+                <td><input type="text" @bind="@userInfo!.StreamSiteId" /></td>
+            </tr>
+            <tr>
+                <th>ユーザーID</th>
+                <td><input type="text" @bind="@userInfo!.UserId" /></td>
+            </tr>
+        </tbody>
+    </table>
+    <button @onclick="OnClickAsync">検索</button>
+</div>
+
+
+@if (search)
+{
+    <hr />
+    <table class="table">
+        <thead>
+            <tr>
+                <th>配信サイトID</th>
+                <th>ユーザーID</th>
+                <th>ユーザー名</th>
+                <th>アイコンURL</th>
+                <th>備考</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@userInfo.StreamSiteId</td>
+                <td>@userInfo.UserId</td>
+                <td>@userInfo.UserName</td>
+                <td>@userInfo.IconPath</td>
+                <td>@userInfo.Note</td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+}
+
+@code {
+    private bool search = false;
+    private UserInfo? userInfo = new();
+
+    /// <summary>
+    /// 検索ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task OnClickAsync()
+    {
+        try
+        {
+            userInfo = await Http.GetFromJsonAsync<UserInfo>(string.Format("UserInfo/Get?streamSiteId={0}&userId={1}", userInfo.StreamSiteId, userInfo.UserId));
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = "検索を実行しました。", Duration = 4000 });
+            search = true;
+        }
+        catch (Exception e)
+        {
+            string　message = $"エラー: 内部サーバーへの接続に失敗しました。: {e.Message}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "エラー", Detail = message, Duration = 4000 });
+            search = false;
+        }
+    }
+}

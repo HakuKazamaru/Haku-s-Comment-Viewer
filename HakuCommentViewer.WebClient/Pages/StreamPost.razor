@@ -1,0 +1,163 @@
+﻿@page "/streampost"
+@inject ILogger<StreamPost> Logger
+
+@inject HttpClient Http
+@inject NavigationManager navigationManager
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>ユーザー登録</PageTitle>
+
+<h6>登録内容</h6>
+<hr />
+
+<table>
+    <tbody>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信名</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamName")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID(配信サイト内ID)</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamPageId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信URL</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamUrl")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント(チャット)ルームID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "CommentRoomId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信サイトID</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StreamSiteId")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信開始日時</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "StartDateTime")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信終了日時</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "EndDateTime")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">視聴者数</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "ViewerCount")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント数</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "CommentCount")) class="w-100" /></td>
+        </tr>
+        <tr>
+            <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">備考</RadzenText></th>
+            <td><RadzenTextBox Change=@(args => OnTextChange(args, "Note")) class="w-100" /></td>
+        </tr>
+    </tbody>
+</table>
+<RadzenButton Click=@(args => Submit()) Text="登録" ButtonStyle="ButtonStyle.Primary" />
+
+@code {
+    private StreamInfo? postdata;
+    private string value;
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        postdata ??= new();
+    }
+
+    /// <summary>
+    /// テキストボックス値変更時
+    /// </summary>
+    /// <param name="value"></param>
+    /// <param name="name"></param>
+    private void OnTextChange(string value, string name)
+    {
+        switch (name)
+        {
+            case "StreamId":
+                {
+                    postdata.StreamId = value;
+                    break;
+                }
+            case "StreamName":
+                {
+                    postdata.StreamName = value;
+                    break;
+                }
+            case "StreamPageId":
+                {
+                    postdata.StreamPageId = value;
+                    break;
+                }
+            case "StreamUrl":
+                {
+                    postdata.StreamUrl = value;
+                    break;
+                }
+            case "CommentRoomId":
+                {
+                    postdata.CommentRoomId = value;
+                    break;
+                }
+            case "StreamSiteId":
+                {
+                    postdata.StreamSiteId = value;
+                    break;
+                }
+            case "StartDateTime":
+                {
+                    DateTime dateTime;
+                    postdata.StartDateTime = DateTime.TryParse(value, out dateTime) ? dateTime : DateTime.MinValue;
+                    break;
+                }
+            case "EndDateTime":
+                {
+                    DateTime dateTime;
+                    postdata.EndDateTime = DateTime.TryParse(value, out dateTime) ? dateTime : DateTime.MinValue;
+                    break;
+                }
+            case "ViewerCount":
+                {
+                    int tmpInt = -1;
+                    postdata.ViewerCount = int.TryParse(value, out tmpInt) ? tmpInt : -1;
+                    break;
+                }
+            case "CommentCount":
+                {
+                    int tmpInt = -1;
+                    postdata.CommentCount = int.TryParse(value, out tmpInt) ? tmpInt : -1;
+                    break;
+                }
+            case "Note":
+                {
+                    postdata.Note = value;
+                    break;
+                }
+            default:
+                {
+                    break;
+                }
+        }
+    }
+
+    /// <summary>
+    /// 登録ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task Submit()
+    {
+        await Http.PostAsJsonAsync<StreamInfo>("StreamInfo", postdata);
+        string message = string.Format("[{0}]登録しました。", DateTime.Now.ToString());
+        NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = message, Duration = 4000 });
+    }
+}

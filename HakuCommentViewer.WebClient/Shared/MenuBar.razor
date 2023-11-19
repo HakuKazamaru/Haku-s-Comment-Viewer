@@ -1,0 +1,51 @@
+﻿@inject ILogger<MenuBar> Logger
+
+@inject HttpClient Http
+@inject TooltipService tooltipService
+
+<RadzenMenu class="menu-bar">
+    <RadzenMenuItem Text="ファイル" Icon="save">
+        <RadzenMenuItem Text="WEBブラウザで開く" Path="" Target="_blank" rel="noopener noreferrer"></RadzenMenuItem>
+        <RadzenMenuItem Text="全ての配信に接続する" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))"></RadzenMenuItem>
+        <RadzenMenuItem Text="全ての配信を切断する" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Right }))"></RadzenMenuItem>
+        <RadzenMenuItem Text="閉じる" Click="@rmiExitOnClick"></RadzenMenuItem>
+    </RadzenMenuItem>
+    <RadzenMenuItem Text="ツール" Icon="home_repair_service">
+        <RadzenMenuItem Text="配信枠管理" Path=""></RadzenMenuItem>
+        <RadzenMenuItem Text="コメビュ">
+            <RadzenMenuItem Text="吹き出し形式" Path="commentview"></RadzenMenuItem>
+            <RadzenMenuItem Text="表形式" Path="commenttableview"></RadzenMenuItem>
+            <RadzenMenuItem Text="ニコ生風" Path="commentnicoliveview"></RadzenMenuItem>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="配信情報管理">
+            <RadzenMenuItem Text="未実装だよ"></RadzenMenuItem>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="コメント管理">
+            <RadzenMenuItem Text="未実装だよ"></RadzenMenuItem>
+        </RadzenMenuItem>
+        <RadzenMenuItem Text="ユーザー管理">
+            <RadzenMenuItem Text="未実装だよ"></RadzenMenuItem>
+        </RadzenMenuItem>
+    </RadzenMenuItem>
+    <RadzenMenuItem Text="設定" Icon="settings">
+        <RadzenMenuItem Text="アプリ設定" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Left }))"></RadzenMenuItem>
+        <RadzenMenuItem Text="プラグイン設定" MouseEnter="@(args => ShowTooltip(args, new TooltipOptions(){ Position = TooltipPosition.Left }))"></RadzenMenuItem>
+    </RadzenMenuItem>
+    <RadzenMenuItem Text="プラグイン" Icon="extension">
+        <RadzenMenuItem Text="未実装だよ"></RadzenMenuItem>
+    </RadzenMenuItem>
+    <RadzenMenuItem Text="ヘルプ" Icon="help_center">
+        <RadzenMenuItem Text="ホームページ" Path="https://twitter.com/HakuKazamaru" Target="_blank" rel="noopener noreferrer"></RadzenMenuItem>
+        <RadzenMenuItem Text="使い方" Path="/help"></RadzenMenuItem>
+        <RadzenMenuItem Text="バージョン情報" Path="/about"></RadzenMenuItem>
+    </RadzenMenuItem>
+</RadzenMenu>
+
+@code {
+    private async Task rmiExitOnClick()
+    {
+        await Http.GetAsync("Exit");
+    }
+
+    private void ShowTooltip(ElementReference elementReference, TooltipOptions options = null) => tooltipService.Open(elementReference, "機能は未実装だよ", options);
+}

@@ -1,0 +1,105 @@
+﻿@inject ILogger<UserListDialog> Logger
+@implements IDisposable
+
+@inject HttpClient Http
+@inject NotificationService NotificationService
+@inject Radzen.DialogService dialogService
+
+@using HakuCommentViewer.Common.Models
+@inject Container container
+
+<RadzenStack Orientation="Orientation.Vertical" Gap="0px" Style="width:100%;height:100%;">
+    <RadzenDataGrid AllowFiltering="true"
+                    AllowColumnResize="true"
+                    AllowAlternatingRows="false"
+                    FilterMode="FilterMode.Advanced"
+                    AllowSorting="true"
+                    PageSize="50"
+                    AllowPaging="true"
+                    PagerHorizontalAlign="HorizontalAlign.Left"
+                    ShowPagingSummary="true"
+                    Data="@userInfoList"
+                    TItem="UserInfo"
+                    ColumnWidth="400px"
+                    LogicalFilterOperator="LogicalFilterOperator.Or"
+                    IsLoading=@isLoading Sort="@ShowLoading" Page="@ShowLoading" Group="@ShowLoading" Filter="@ShowLoading"
+                    Style="heigth:95%">
+        <Columns>
+            <RadzenDataGridColumn TItem="UserInfo" Property="UserId" Title="ユーザーID" Width="100px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="UserName" Title="ユーザー名" Width="160px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="HandleName" Title="ハンドルネーム" Width="160px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="CommentCount" Title="累計コメント数" Width="160px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="GiftCount" Title="累計スパ茶/ギフト数" Width="160px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="FastCommentDateTime" Title="初回コメント日時" Width="160px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="LastCommentDateTime" Title="最終コメント日時" Width="160px" />
+            <RadzenDataGridColumn TItem="UserInfo" Property="Note" Title="備考" Width="400px" />
+        </Columns>
+    </RadzenDataGrid>
+
+</RadzenStack>
+
+@code {
+    [Parameter]
+    public string StreamSiteId { get; set; }
+    [Parameter]
+    public string StreamInfoId { get; set; }
+
+    bool isLoading = false;
+    private UserInfo[]? userInfoList;
+
+    /// <summary>
+    /// ページ読み込み時
+    /// </summary>
+    /// <returns></returns>
+    protected override async Task OnInitializedAsync()
+    {
+        container.OnChange += this.StateHasChanged;
+
+        await ShowLoading();
+        
+        try
+        {
+            userInfoList = await Http.GetFromJsonAsync<UserInfo[]>(
+                $"UserInfo/GetByStreamId?streamSiteId={StreamSiteId}&streamInfoId={StreamInfoId}");
+        }
+        catch (Exception e)
+        {
+            ShowErrorMessage($"ユーザー情報の取得に失敗しました。<br>エラー:{e.Message}");
+        }
+    }
+
+    /// <summary>
+    /// ローディング表示用
+    /// </summary>
+    /// <returns></returns>
+    async Task ShowLoading()
+    {
+        isLoading = true;
+        await Task.Yield();
+        isLoading = false;
+    }
+
+    /// <summary>
+    /// エラーメッセージ
+    /// </summary>
+    /// <param name="message"></param>
+    private void ShowErrorMessage(string message)
+    {
+        NotificationService.Notify(new NotificationMessage
+            {
+                Severity = NotificationSeverity.Error,
+                Summary = "エラー",
+                Detail = message,
+                Duration = 10000
+            });
+        this.container.FooterText = message.Replace("<br>", "　");
+    }
+
+    /// <summary>
+    /// デスコンストラクター
+    /// </summary>
+    public void Dispose()
+    {
+        container.OnChange -= this.StateHasChanged;
+    }
+}

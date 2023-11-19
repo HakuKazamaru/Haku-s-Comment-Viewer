@@ -1,0 +1,107 @@
+﻿@page "/commentget"
+@inject ILogger<CommentGet> Logger
+
+@inject HttpClient Http
+@inject NotificationService NotificationService
+
+@using HakuCommentViewer.Common.Models
+
+<PageTitle>コメント指定取得</PageTitle>
+
+<h6>コメント指定取得</h6>
+<hr />
+
+<div>
+    <table>
+        <tbody>
+            <tr>
+                <th>配信情報ID</th>
+                <td><input type="text" @bind="@commentInfo!.StreamInfoId" /></td>
+            </tr>
+            <tr>
+                <th>タイムスタンプ(UtcSec)</th>
+                <td><input type="text" @bind="@commentInfo!.TimeStampUSec" /></td>
+            </tr>
+            <tr>
+                <th>コメントID</th>
+                <td><input type="text" @bind="@commentInfo!.CommentId" /></td>
+            </tr>
+        </tbody>
+    </table>
+    <button @onclick="OnClickAsync">検索</button>
+</div>
+
+
+@if (search)
+{
+    <hr />
+    <table>
+        <tbody>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信ID</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.StreamInfoId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">タイムスタンプ(UtcSec)</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.TimeStampUSec</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメントID</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.CommentId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信サイトID</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.StreamSiteId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">配信管理ID</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.StreamManagementId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザーID</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.UserId</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">ユーザー名</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.UserName</td>
+            </tr>
+            <tr>
+                <th><RadzenText TextStyle="TextStyle.Subtitle2" TagName="TagName.H3">コメント</RadzenText></th>
+                <td><RadzenText class="w-100" />@commentInfo.CommentText</td>
+            </tr>
+        </tbody>
+    </table>
+}
+else
+{
+}
+
+@code {
+    private bool search = false;
+    private CommentInfo? commentInfo = new();
+
+    /// <summary>
+    /// 検索ボタン押下時
+    /// </summary>
+    /// <returns></returns>
+    private async Task OnClickAsync()
+    {
+        try
+        {
+            string tmoString = "";
+            commentInfo = await Http.GetFromJsonAsync<CommentInfo>(
+                string.Format("CommentInfo/Get?streamInfoId={0}&timeStampUSec={1}&commentId={2}",
+                commentInfo.StreamInfoId, commentInfo.TimeStampUSec, commentInfo.CommentId));
+            tmoString = Common.UnixTimeToDateTimeString(commentInfo.TimeStampUSec);
+            if (!string.IsNullOrWhiteSpace(tmoString)) { commentInfo.TimeStampUSec = tmoString; }
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Info, Summary = "通知", Detail = "検索を実行しました。", Duration = 4000 });
+            search = true;
+        }
+        catch (Exception e)
+        {
+            string message = $"エラー: 内部サーバーへの接続に失敗しました。: {e.Message}";
+            NotificationService.Notify(new NotificationMessage { Severity = NotificationSeverity.Error, Summary = "エラー", Detail = message, Duration = 4000 });
+            search = false;
+        }
+    }
+}
