@@ -1,0 +1,21 @@
+﻿@page "/commentdashboardview"
+@inject ILogger<CommentDashboardView> Logger
+
+<PageTitle>ｺﾒﾋﾞｭ(ノーマル形式)</PageTitle>
+
+<RadzenSplitter Orientation="Orientation.Horizontal" style="height: 100%; border: 1px solid rgba(0,0,0,.08);">
+    <RadzenSplitterPane Size="50%" style="height: 100%;">
+        <div class="rz-pt-2" style="height: 100%;">
+            <Comment />
+        </div>
+    </RadzenSplitterPane>
+    <RadzenSplitterPane Size="50%" style="height: 100%;">
+        <div class="rz-pt-2" style="height: 100%;">
+            <Gift />
+        </div>
+    </RadzenSplitterPane>
+</RadzenSplitter>
+
+@code {
+
+}

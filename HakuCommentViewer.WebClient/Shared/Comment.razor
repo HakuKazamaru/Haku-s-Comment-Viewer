@@ -8,18 +8,21 @@
 @using HakuCommentViewer.Plugin.Models
 @inject Container container
 
-<h6>・コメント</h6>
-<hr />
-<div class="rz-data-grid rz-has-paginator rz-datatable  rz-datatable-scrollable" style="height: 55vh;">
+<div style="height: 7%;">
+    <h6>・コメント</h6>
+    <hr />
+</div>
+<div class="rz-data-grid rz-has-paginator rz-datatable  rz-datatable-scrollable" style="height: 93%;">
     <div class="rz-data-grid-data">
         <table class="rz-grid-table rz-grid-table-fixed" style="width:100%">
             <colgroup>
-                <col style="width:10%;z-index:1">
-                <col style="width:80%">
+                <col style="width:2.5em;z-index:1">
+                <col style="width:100%">
             </colgroup>
             <thead>
                 <tr>
-                    <th rowspan="1" colspan="1" class="rz-unselectable-text rz-frozen-cell rz-frozen-cell-left rz-frozen-cell-left-end  rz-text-align-right" scope="col" style="width:10%;text-align:right;left:0;z-index:2;">
+                    <th rowspan="1" colspan="1" class="rz-unselectable-text rz-frozen-cell rz-frozen-cell-left rz-frozen-cell-left-end  rz-text-align-right" scope="col"
+                        style="width:2.5em;text-align:center;left:0;z-index:2;">
                         <div tabindex="-1">
                             <span class="rz-column-title" title="#">
                                 <span class="rz-column-title-content">#</span>
@@ -27,7 +30,7 @@
                             <div style="cursor:col-resize;float:right;" class="rz-column-resizer">&nbsp;</div>
                         </div>
                     </th>
-                    <th rowspan="1" colspan="1" class="rz-unselectable-text rz-text-align-left" scope="col" style="width:90%;z-index:1">
+                    <th rowspan="1" colspan="1" class="rz-unselectable-text rz-text-align-left" scope="col" style="width:100%;z-index:1">
                         <div tabindex="-1">
                             <span class="rz-column-title" title="コメント">
                                 <span class="rz-column-title-content">コメント</span>
@@ -51,36 +54,40 @@
                     @foreach (var commentInfo in commentInfoList)
                     {
                         <tr class="rz-data-row rz-datatable-edit ">
-                            <td rowspan="1" colspan="1" style="width:10%;text-align:right;;left:0;z-index:1" class=" rz-frozen-cell rz-frozen-cell-left rz-frozen-cell-left-end ">
+                            <td rowspan="1" colspan="1" style="width:2.5em;text-align:right;;left:0;z-index:1" class=" rz-frozen-cell rz-frozen-cell-left rz-frozen-cell-left-end ">
                                 <span class="rz-cell-data" title="@commentInfo.StreamNo">
                                     @commentInfo.StreamNo
                                 </span>
                             </td>
-                            <td rowspan="1" colspan="1" style="width:90%">
-                                <RadzenStack Orientation="Orientation.Horizontal" AlignItems="AlignItems.Center" Gap="0px">
+                            <td rowspan="1" colspan="1" style="width:100%">
+                                <div class="rz-stack rz-display-flex rz-flex-row rz-align-items-center rz-justify-content-normal"
+                                     style="--rz-gap:0px;flex-wrap:nowrap;">
                                     <div class="rz-p-3 rz-text-align-center">
-                                        <RadzenGravatar></RadzenGravatar>
+                                        <img class="rz-gravatar"
+                                             src="https://secure.gravatar.com/avatar/d41d8cd98f00b204e9800998ecf8427e?d=retro&amp;s=36">
                                     </div>
-                                    <RadzenStack Orientation="Orientation.Vertical" Gap="0px" Style="width:100%">
+                                    <div class="rz-stack rz-display-flex rz-flex-column rz-align-items-normal rz-justify-content-normal"
+                                         style="width:100%;--rz-gap:0px;flex-wrap:nowrap;">
                                         <div>
                                             <span class="rz-cell-data" title="@commentInfo.UserName">
                                                 <strong>@commentInfo.UserName</strong>
                                             </span>
                                         </div>
                                         <div>
-                                            <span class="rz-cell-data" title="@commentInfo.CommentText">
+                                            <span class="rz-cell-data" title="@commentInfo.CommentText" style="white-space:pre-line;">
                                                 @commentInfo.CommentText
                                             </span>
                                         </div>
                                         <div>
-                                            <RadzenStack Orientation="Orientation.Horizontal" JustifyContent="JustifyContent.End">
+                                            <div class="rz-stack rz-display-flex rz-flex-row rz-align-items-normal rz-justify-content-flex-end"
+                                                 style="flex-wrap:nowrap;">
                                                 <span class="rz-cell-data rz-text-overline" title="@commentInfo.TimeStampUSec">
                                                     @commentInfo.TimeStampUSec
                                                 </span>
-                                            </RadzenStack>
+                                            </div>
                                         </div>
-                                    </RadzenStack>
-                                </RadzenStack>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -160,6 +167,7 @@
             };
 
             await hubConnection.StartAsync();
+
         }
         catch (Exception e)
         {
@@ -249,10 +257,10 @@
             commentInfoList.RemoveAt(commentInfoList.Count - 1);
         }
 
+        await InvokeAsync(StateHasChanged);
+
         message = string.Format(message, streamNo, userName, commentText);
         this.container.FooterText = message.Replace("<br>", "　");
-
-        await InvokeAsync(StateHasChanged);
 
         Logger.LogDebug("========== Func End! ==================================================");
     }
